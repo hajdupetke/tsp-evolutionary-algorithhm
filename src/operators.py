@@ -52,7 +52,7 @@ def order_crossover(p1, p2, rng):
     positions = list(range(cut2+1,n))+list(range(0,cut1))
     
     j = 0
-    for i in list(range(cut2+1, n)) + list(range(cut1)):
+    for i in list(positions):
         child[i] = fill[j]
         j += 1
         
