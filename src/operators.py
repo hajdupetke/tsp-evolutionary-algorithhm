@@ -61,3 +61,29 @@ def swap_mutation(tour, rng):
     # Return the copy
     return new_tour
     
+    
+def inversion_mutation(tour, rng):
+    """
+    Inversion mutation — reverse the segment between two random positions.
+ 
+    On a symmetric TSP this changes only two edges, while swap changes up to
+    four, so it is less disruptive. It is the same move as a 2-opt step, but
+    random: it does not check whether the tour got shorter.
+ 
+    Not part of Algorithm 1. Used only for the mutation comparison experiment.
+ 
+    :param tour: a valid tour
+    :param rng: random.Random instance
+    :return: a NEW tour, the input is not modified
+    """
+    # Copy the tour
+    new_tour = tour.copy()
+    
+    # Pick two random positions
+    i, j = sorted(rng.sample(range(len(tour)), 2))
+    
+    # Reverse the part between them
+    new_tour[i:j+1] = reversed(new_tour[i:j+1])
+
+    # Return the copy
+    return new_tour
