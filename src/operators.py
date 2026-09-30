@@ -1,3 +1,24 @@
+
+def tournament_selection(costs, k, rng):
+    """
+    Select one individual by tournament and return its INDEX.
+ 
+    Picks k random indices and returns the one whose cost is smallest.
+    Smallest cost = highest fitness, since fitness is 1/cost, so there is no
+    need to divide anything here.
+ 
+    :param costs: list of tour costs, parallel to the population
+    :param k: tournament size (selection pressure — larger means more pressure)
+    :param rng: random.Random instance
+    :return: index into the population
+    """
+    # Pick k random indices
+    indices = [rng.randrange(len(costs)) for _ in range(k)]
+    
+    # Return the index with the lowest cost
+    return min(indices, key=lambda i: costs[i])
+
+
 def order_crossover(p1, p2, rng):
     """
     Order Crossover (OX). Returns ONE child.
