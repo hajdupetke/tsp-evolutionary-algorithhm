@@ -145,6 +145,55 @@ Equation~\eqref{eq:tsp_permutation}; this representation is the one adopted
 throughout this report.
 
 % ===============================================================
+\subsection{Related Evolutionary Approaches}
+
+\subsubsection{Edge-Swapping Genetic Algorithm (Liu, 2014)}
+Liu~\cite{liu2014} builds a genetic algorithm around a crossover operator
+called \emph{Edge Swapping} (ES), which overlays the two parent tours and
+partitions their edges into alternating cycles, called \emph{M-rings}, that
+correspond to the regions where the parents disagree; the offspring keeps the
+shared edges and swaps in selected M-rings from the second parent. The search
+starts with a conservative \emph{local} version of ES and switches to a
+\emph{global} version once progress stalls, the latter exchanging groups of
+geographically close M-rings. Crucially, the population is initialised not
+randomly but with a greedy local search using the 2-opt neighbourhood. On
+benchmarks of up to 16{,}862 cities the algorithm reaches best-known solutions
+and matches. Following Liu, we therefore seed our own
+population with greedy nearest-neighbour tours refined by 2-opt, which gives the
+search a strong starting point at negligible cost.
+
+\subsubsection{Genetic-based Particle Swarm Optimization (Liao et al., 2012)}
+Liao et al.~\cite{liao2012} propose GPSO, a genetic-based particle swarm
+optimisation for the TSP: each particle is a real-valued vector decoded into a
+tour by ranking its components, and crossover and mutation operators are added
+to the standard velocity update. We adopt the geometric construction with which
+they initialise the search: the geographical centre of the cities is computed,
+each city is assigned the angle it forms around that centre, and the cities are
+sorted by angle, which produces an initial non-crossing route. For large
+instances the authors further split the cities with Fuzzy C-Means clustering and
+merge the sub-tours, a decomposition we omit since the instances we consider do
+not exceed 100 cities. On berlin52 the authors report the near-optimal value 7544.37
+in 99 of 100 runs, whereas conventional PSO found the optimum of bayg29 in only
+1 of 100 runs, which motivates using this construction to start our own
+population with non-crossing tours instead of random permutations.
+
+\subsubsection{Genetic Algorithm with Order Crossover (Hussain et al., 2017)}
+Hussain et al.~\cite{hussain2017} compare crossover operators for a genetic
+algorithm on the TSP using the path representation, in which a chromosome is
+simply the order in which the cities are visited, and where classical one-point
+or uniform crossovers cannot be used because they create duplicate cities. They
+review partially mapped crossover (PMX), order crossover (OX) and cycle
+crossover (CX), and propose a modified cycle crossover (CX2) that recombines
+the parent cycles differently to obtain offspring that differ more from their
+parents. On twelve symmetric and asymmetric TSPLIB instances, CX2 was not
+universally best: it won on some instances, but PMX or OX performed similarly
+or better on the larger ones. We adopt OX in our own algorithm: a segment of
+one parent is copied into the child, and the remaining cities are filled in the
+order in which they appear in the other parent, omitting those already present,
+so that the relative order of the parents is preserved and the child is always
+a valid tour.
+
+% ===============================================================
 \section{Algorithm}
 
 % ===============================================================
@@ -163,6 +212,23 @@ throughout this report.
 J.-Y. Potvin, ``Genetic algorithms for the traveling salesman problem,''
 \emph{Annals of Operations Research}, vol.~63, no.~3, pp.~339--370, 1996.
 \url{https://doi.org/10.1007/BF02125403}.
+
+\bibitem{liu2014}
+S.~Liu, ``A Powerful Genetic Algorithm for Traveling Salesman Problem,''
+arXiv:1402.4699, 2014. \url{https://arxiv.org/abs/1402.4699}.
+
+\bibitem{liao2012}
+Y.-F.~Liao, D.-H.~Yau, and C.-L.~Chen, ``Evolutionary algorithm to traveling
+salesman problems,'' \emph{Computers \& Mathematics with Applications},
+vol.~64, no.~5, pp.~788--797, 2012.
+\url{https://doi.org/10.1016/j.camwa.2011.12.018}.
+
+\bibitem{hussain2017}
+A.~Hussain, Y.~S.~Muhammad, M.~N.~Sajid, I.~Hussain, A.~M.~Shoukry, and
+S.~Gani, ``Genetic algorithm for traveling salesman problem with modified cycle
+crossover operator,'' \emph{Computational Intelligence and Neuroscience},
+vol.~2017, Article ID 7430125, 7 pages, 2017.
+\url{https://doi.org/10.1155/2017/7430125}.
 
 \end{thebibliography}
 
