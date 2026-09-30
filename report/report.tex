@@ -146,6 +146,7 @@ throughout this report.
 
 % ===============================================================
 \subsection{Related Evolutionary Approaches}
+\label{sec:related}
 
 \subsubsection{Edge-Swapping Genetic Algorithm (Liu, 2014)}
 Liu~\cite{liu2014} builds a genetic algorithm around a crossover operator
@@ -173,10 +174,28 @@ one parent is copied into the child and the remaining cities are filled in
 their order of appearance in the other parent, always yielding a valid tour.
 
 % ===============================================================
+\subsection{Motivation of the Developed Approach}
+
+The evolutionary approach we develop follows the genetic algorithm presented in
+Section~9.2 of Mitchell~\cite{mitchell1997}, adapted to the permutation
+representation of the TSP; its pseudo-code is given in
+Section~\ref{sec:algorithm}. Within this template, the design choices left open
+concern the initialization of the population and the crossover operator, which
+we align with the literature reviewed in Section~\ref{sec:related}. We
+initialize the population from informed tours rather than at random, combining
+greedy nearest-neighbour tours refined by 2-opt~\cite{liu2014} with geometric,
+non-crossing tours~\cite{liao2012}; for recombination we adopt the order
+crossover (OX)~\cite{hussain2017}. The remaining operators are left
+unchanged, so that the effect of the two adapted components can be isolated in
+Section~\ref{sec:experimental}.
+
+% ===============================================================
 \section{Algorithm}
+\label{sec:algorithm}
 
 % ===============================================================
 \section{Experimental part}
+\label{sec:experimental}
 
 % ===============================================================
 \section{Results and Analysis}
@@ -208,6 +227,11 @@ S.~Gani, ``Genetic algorithm for traveling salesman problem with modified cycle
 crossover operator,'' \emph{Computational Intelligence and Neuroscience},
 vol.~2017, Article ID 7430125, 7 pages, 2017.
 \url{https://doi.org/10.1155/2017/7430125}.
+
+\bibitem{mitchell1997}
+T.~M. Mitchell, \emph{Machine Learning}. New York, NY, USA: McGraw-Hill, 1997,
+ch.~9, sec.~9.2.
+\url{https://www.cs.cmu.edu/~tom/files/MachineLearningTomMitchell.pdf}.
 
 \end{thebibliography}
 
