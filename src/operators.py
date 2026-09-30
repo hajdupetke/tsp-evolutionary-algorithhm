@@ -36,3 +36,28 @@ def order_crossover(p1, p2, rng):
         j += 1
         
     return child
+
+
+def swap_mutation(tour, rng):
+    """
+    Swap mutation — exchange the cities at two random positions.
+ 
+    This is the operator named in Algorithm 1, so it is the default.
+ 
+    :param tour: a valid tour
+    :param rng: random.Random instance
+    :return: a NEW tour, the input is not modified
+    """
+    
+    # Copy the tour
+    new_tour = tour.copy()
+    
+    # Pick two random positions
+    i,j = rng.sample(range(len(tour)),2)
+    
+    # Exchange the two cities in the copy
+    new_tour[i], new_tour[j] = new_tour[j], new_tour[i]
+
+    # Return the copy
+    return new_tour
+    
