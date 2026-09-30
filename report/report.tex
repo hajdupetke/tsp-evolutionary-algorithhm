@@ -1,5 +1,7 @@
 \documentclass[11pt,a4paper]{article}
 
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -15,30 +17,6 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage[hidelinks]{hyperref}
-
-% ---------------------------------------------------------------
-% Minimal algorithm float + pseudocode environment
-% (self-contained: no algorithm/algpseudocode package required;
-%  swap for those packages if your TeX distribution provides them)
-% ---------------------------------------------------------------
-\newfloat{algorithm}{tbp}{loa}
-\floatname{algorithm}{Algorithm}
-
-\newenvironment{algorithmic}[1][]%
-  {\begin{list}{}{%
-     \setlength{\leftmargin}{2em}%
-     \setlength{\itemsep}{1pt}%
-     \setlength{\parsep}{0pt}%
-     \setlength{\topsep}{3pt}}}%
-  {\end{list}}
-
-\newcommand{\Require}[1]{\item[\textbf{Require:}] #1}
-\providecommand{\Ensure}{}
-\renewcommand{\Ensure}[1]{\item[\textbf{Ensure:}] #1}
-\newcommand{\State}[1]{\item[] #1}
-\newcommand{\For}[1]{\item[]\textbf{for} #1 \textbf{do}}
-\newcommand{\EndFor}{\item[]\textbf{end for}}
-\newcommand{\Return}[1]{\item[]\textbf{return} #1}
 
 % ---------------------------------------------------------------
 % Header / footer
@@ -145,8 +123,63 @@ Equation~\eqref{eq:tsp_permutation}; this representation is the one adopted
 throughout this report.
 
 % ===============================================================
+\newpage
 \section{Algorithm}
+Each individual is represented as a permutation of all cities, where the order
+of the cities defines the tour and the final city is connected back to the first.
+The initial population consists of $p$ randomly generated permutations.
+The cost of an individual is given by Equation~\eqref{eq:tsp_permutation}.
+Since the TSP is a minimisation problem, this cost is converted into a
+maximisation-based fitness function defined as
+\begin{equation}
+    F(\pi) = \frac{1}{C(\pi)}.
+    \label{eq:fitness}
+\end{equation}
+Consequently, shorter tours receive higher fitness values and are favoured
+during selection.
 
+In each generation, a fraction $(1-r)$ of the population is selected and carried over unchanged. The remaining fraction $r$ is replaced by offspring generated
+from selected parent pairs. Tournament selection is used to select parents. For each parent a small number of individuals are sampled randomly from the 
+population, and the individual with the highest fitness is selected. This process is repeated to obtain the second parent. Tournament selection was chosen because it
+is simple to implement and provides selection pressure towards shorter tours while maintaining population diversity.
+
+Order Crossover (OX) is used to generate offspring because it preserves valid permutations. A segment from one parent is copied to the offspring,
+while the remaining cities are inserted according to their order in the second parent, skipping already used cities. Two offspring are generated for each parent pair
+by swapping the parent roles.
+
+After crossover, swap mutation is applied to a fraction $m$ of the new population. Two randomly selected positions in an individual are exchanged, which introduces variation
+while preserving a valid permutation. The process is repeated for $G$ generations, and the best tour found during the run is returned.
+
+
+\begin{algorithm}[H]
+\caption{Genetic Algorithm for the Travelling Salesman Problem}
+\begin{algorithmic}
+\Require cities, population size $p$, replacement rate $r$, mutation rate $m$, number of generations $G$
+\Ensure best tour found
+
+\State $P \gets p$ random permutations of the cities
+\State evaluate the fitness of each individual in $P$
+
+\For{$g = 1$ to $G$}
+    \State $P_s \gets$ the best $(1-r)p$ individuals from $P$
+
+    \For{$i = 1$ to $(rp)/2$}
+        \State select parents $h_1,h_2$ from $P$ using tournament selection
+        \State $o_1 \gets \textsc{OrderCrossover}(h_1,h_2)$
+        \State $o_2 \gets \textsc{OrderCrossover}(h_2,h_1)$
+        \State add $o_1$ and $o_2$ to $P_s$
+    \EndFor
+
+    \State apply \textsc{SwapMutation} to a fraction $m$ of $P_s$
+    \State $P \gets P_s$
+    \State evaluate the fitness of each individual in $P$
+    \State update the best tour found
+\EndFor
+
+\State \Return best tour
+
+\end{algorithmic}
+\end{algorithm}
 % ===============================================================
 \section{Experimental part}
 
