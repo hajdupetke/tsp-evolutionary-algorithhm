@@ -1,0 +1,104 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{setspace}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------
+% Minimal algorithm float + pseudocode environment
+% (self-contained: no algorithm/algpseudocode package required;
+%  swap for those packages if your TeX distribution provides them)
+% ---------------------------------------------------------------
+\newfloat{algorithm}{tbp}{loa}
+\floatname{algorithm}{Algorithm}
+
+\newenvironment{algorithmic}[1][]%
+  {\begin{list}{}{%
+     \setlength{\leftmargin}{2em}%
+     \setlength{\itemsep}{1pt}%
+     \setlength{\parsep}{0pt}%
+     \setlength{\topsep}{3pt}}}%
+  {\end{list}}
+
+\newcommand{\Require}[1]{\item[\textbf{Require:}] #1}
+\providecommand{\Ensure}{}
+\renewcommand{\Ensure}[1]{\item[\textbf{Ensure:}] #1}
+\newcommand{\State}[1]{\item[] #1}
+\newcommand{\For}[1]{\item[]\textbf{for} #1 \textbf{do}}
+\newcommand{\EndFor}{\item[]\textbf{end for}}
+\newcommand{\Return}[1]{\item[]\textbf{return} #1}
+
+% ---------------------------------------------------------------
+% Header / footer
+% ---------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\itshape TARI29 Artificial Intelligence, 2026}
+\fancyhead[R]{\itshape Evolutionary Computation Assignment}
+\fancyfoot[C]{Page \thepage{} of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\itshape TARI29 Artificial Intelligence, 2026}%
+  \fancyfoot[C]{Page \thepage{} of \pageref{LastPage}}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+% ---------------------------------------------------------------
+% Title block
+% ---------------------------------------------------------------
+\newcommand{\groupnumber}{\#}   % <-- replace with your group number
+\title{Group \groupnumber{} Assignment Report\\[0.2em]
+  \large An Evolutionary Algorithm for the Travelling Salesman Problem}
+\author{%
+  Christos Zampounis \quad Mehmet Cihan Yalcin \quad P\'eter D\'avid Hajdu\\[0.3em]
+  Pierre Kasparian \quad Prajval Parthiban}
+\date{September 30, 2026}
+
+% Red helper for the template's instructions
+\newcommand{\instruction}[1]{\textcolor{red}{#1}}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{plain}
+
+% ===============================================================
+\section{Introduction}
+
+% ===============================================================
+\section{Problem}
+
+% ===============================================================
+\section{Algorithm}
+
+% ===============================================================
+\section{Experimental part}
+
+% ===============================================================
+\section{Results and Analysis}
+
+% ===============================================================
+\section{Conclusions}
+
+% ===============================================================
+\begin{thebibliography}{9}
+
+\end{thebibliography}
+
+\end{document}
