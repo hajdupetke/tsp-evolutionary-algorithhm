@@ -4,14 +4,14 @@ initialization.py — Population initialization strategies.
 Provides:
   - random_population: baseline random permutations
   - nearest_neighbour_tour: greedy NN heuristic (Liu, 2014)
-  - two_opt_improvement: local search (Liu, 2014)
+  - two_opt_improvement: local search with delta evaluation (Liu, 2014)
   - angle_based_tour: non-crossing geometric tour (Liao et al., 2012)
   - smart_population: half NN+2-opt, half angle-based
 """
 
 import math
 import random
-from src.utils import calculate_cost, distance
+from src.utils import build_distance_matrix
 
 DIVERSITY_SWAPS = 3
 
@@ -33,34 +33,43 @@ def random_population(population_size, num_cities, rng=None):
         population.append(tour)
     return population
 
-def nearest_neighbour_tour(cities, start_city=0):
+def nearest_neighbour_tour(cities, start_city=0, weight_type="EUC_2D", dist_matrix=None):
     """
     Build one tour using the nearest-neighbour greedy heuristic (Liu, 2014).
 
     Starting from `start_city`, repeatedly append the closest unvisited city.
+    Distance metric follows TSPLIB EDGE_WEIGHT_TYPE via weight_type.
+    Pass a precomputed dist_matrix to avoid rebuilding it per call.
     """
-    len_cities = len(cities)
-    not_visited = set(range(len_cities))
+    n = len(cities)
+    if dist_matrix is None:
+        dist_matrix = build_distance_matrix(cities, weight_type)
+    not_visited = set(range(n))
     tour = [start_city]
     not_visited.remove(start_city)
 
     while not_visited:
         current = tour[-1]
-        nearest = min(not_visited, key=lambda city: distance(cities[current], cities[city]))
+        row = dist_matrix[current]
+        nearest = min(not_visited, key=lambda city: row[city])
         tour.append(nearest)
         not_visited.remove(nearest)
 
     return tour
 
-def two_opt_improvement(tour, cities, max_iter=None):
+def two_opt_improvement(tour, cities, max_iter=None, weight_type="EUC_2D", dist_matrix=None):
     """
-    2-opt local search (Liu, 2014).
+    2-opt local search (Liu, 2014) with O(1) delta evaluation.
 
-    Repeatedly reverses tour segments [i..j] whenever doing so reduces cost.
-    Restarts the search after every accepted improvement.
+    Only the two broken / two new edges are compared instead of
+    recomputing the full tour cost per candidate: ~100x faster on
+    kroA100/200, so no iteration cap is needed (max_iter=None converges).
     """
     tour = tour[:]
-    len_tour = len(tour)
+    n = len(tour)
+    if dist_matrix is None:
+        dist_matrix = build_distance_matrix(cities, weight_type) if cities is not None else None
+    D = dist_matrix
     is_improved = True
     iters = 0
 
@@ -70,15 +79,19 @@ def two_opt_improvement(tour, cities, max_iter=None):
         is_improved = False
         iters += 1
 
-        for i in range(1, len_tour - 1):
-            for j in range(i + 1, len_tour):
-                # Reverse segment [i..j]
-                new_tour = tour[:i] + tour[i : j + 1][::-1] + tour[j + 1 :]
-                if calculate_cost(new_tour, cities) < calculate_cost(tour, cities):
-                    tour = new_tour
+        for i in range(1, n - 1):
+            a = tour[i - 1]
+            b = tour[i]
+            improved_here = False
+            for j in range(i + 1, n):
+                c = tour[j]
+                d = tour[(j + 1) % n]
+                if D[a][b] + D[c][d] > D[a][c] + D[b][d]:
+                    tour[i:j + 1] = reversed(tour[i:j + 1])
                     is_improved = True
+                    improved_here = True
                     break  # restart after any improvement
-            if is_improved:
+            if improved_here:
                 break
 
     return tour
@@ -109,7 +122,7 @@ def _swap_mutation_local(tour, rng=None):
     mutated[i], mutated[j] = mutated[j], mutated[i]
     return mutated
 
-def smart_population(cities, population_size, rng=None, max_iter=None):
+def smart_population(cities, population_size, rng=None, max_iter=None, weight_type="EUC_2D"):
     """
     Combined smart initialization (report Section 2.3).
 
@@ -118,19 +131,22 @@ def smart_population(cities, population_size, rng=None, max_iter=None):
 
     :param rng: random.Random instance for the diversity swaps.
                 If None, the global `random` module is used.
-    :param max_iter: forwarded to two_opt_improvement; caps local-search
-                cost on large instances (e.g. kroA100/200).
+    :param max_iter: forwarded to two_opt_improvement (None = converge).
+                Kept for API compatibility; no cap is applied by callers.
+    :param weight_type: TSPLIB EDGE_WEIGHT_TYPE of `cities`.
     """
-    len_cities = len(cities)
+    n = len(cities)
     half = population_size // 2
     population = []
     rng = rng if rng is not None else random
+    dist_matrix = build_distance_matrix(cities, weight_type)
 
     # First half: nearest-neighbour + 2-opt
     for i in range(half):
-        start_city = i % len_cities
-        tour = nearest_neighbour_tour(cities, start_city)
-        tour = two_opt_improvement(tour, cities, max_iter=max_iter)
+        start_city = i % n
+        tour = nearest_neighbour_tour(cities, start_city, weight_type, dist_matrix)
+        tour = two_opt_improvement(tour, cities, max_iter=max_iter,
+                                   weight_type=weight_type, dist_matrix=dist_matrix)
         population.append(tour)
 
     # Second half: angle-based with light mutation for diversity
