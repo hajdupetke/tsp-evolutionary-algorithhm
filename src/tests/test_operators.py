@@ -25,6 +25,7 @@ def test_tournament_returns_index():
 
 
 def test_tournament_picks_lowest_cost():
+    # Use fixed picks so we know which index should win.
     class FixedPicks:
         def __init__(self, picks):
             self.picks = list(picks)
@@ -64,6 +65,7 @@ def test_crossover_example():
 
     child = order_crossover(p1, p2, FixedCuts())
 
+    # Check both the permutation and the copied section.
     assert is_valid(child, 8)
     assert child[2:5] == [2, 3, 4]
 
@@ -109,6 +111,7 @@ def test_swap_mutation():
         assert mutated is not tour
         assert tour == list(range(n))
 
+        # A swap should change exactly two positions.
         differences = sum(a != b for a, b in zip(tour, mutated))
         assert differences == 2
 
@@ -133,4 +136,5 @@ def test_same_seed_same_result():
     a = order_crossover(p1, p2, random.Random(42))
     b = order_crossover(p1, p2, random.Random(42))
 
+    # Same seed should give the same crossover result.
     assert a == b
