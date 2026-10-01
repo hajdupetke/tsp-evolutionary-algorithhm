@@ -1,4 +1,4 @@
-"""Tests for src/initialization.py (Coder 1 — Phase 2)."""
+"""Tests for src/initialization.py"""
 
 from src.utils import calculate_cost
 from src.initialization import *

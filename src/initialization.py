@@ -16,15 +16,20 @@ from src.utils import calculate_cost, distance
 DIVERSITY_SWAPS = 3
 
 
-def random_population(population_size, num_cities):
+def random_population(population_size, num_cities, rng=None):
     """
     Baseline initialization — `population_size` random permutations
     of city indices 0 .. num_cities-1.
+
+    :param rng: random.Random instance for reproducibility.
+                If None, the global `random` module is used (backward
+                compatible with the original signature).
     """
+    rng = rng if rng is not None else random
     population = []
     for _ in range(population_size):
         tour = [i for i in range(num_cities)]
-        random.shuffle(tour)
+        rng.shuffle(tour)
         population.append(tour)
     return population
 
@@ -96,29 +101,36 @@ def angle_based_tour(cities):
     tour = sorted(range(n), key=lambda idx: get_angle(idx, cities, cx, cy))
     return tour
 
-def _swap_mutation_local(tour):
+def _swap_mutation_local(tour, rng=None):
     """Swap two random positions — used for diversity in smart_population."""
+    rng = rng if rng is not None else random
     mutated = tour.copy()
-    i, j = random.sample(range(len(mutated)), 2)
+    i, j = rng.sample(range(len(mutated)), 2)
     mutated[i], mutated[j] = mutated[j], mutated[i]
     return mutated
 
-def smart_population(cities, population_size):
+def smart_population(cities, population_size, rng=None, max_iter=None):
     """
     Combined smart initialization (report Section 2.3).
 
     First half:  NN + 2-opt with different start cities.
     Second half: angle-based tour with a few random swaps for diversity.
+
+    :param rng: random.Random instance for the diversity swaps.
+                If None, the global `random` module is used.
+    :param max_iter: forwarded to two_opt_improvement; caps local-search
+                cost on large instances (e.g. kroA100/200).
     """
     len_cities = len(cities)
     half = population_size // 2
     population = []
+    rng = rng if rng is not None else random
 
     # First half: nearest-neighbour + 2-opt
     for i in range(half):
         start_city = i % len_cities
         tour = nearest_neighbour_tour(cities, start_city)
-        tour = two_opt_improvement(tour, cities)
+        tour = two_opt_improvement(tour, cities, max_iter=max_iter)
         population.append(tour)
 
     # Second half: angle-based with light mutation for diversity
@@ -127,7 +139,7 @@ def smart_population(cities, population_size):
         tour = base.copy()
         # A few random swaps so individuals are not identical
         for _ in range(DIVERSITY_SWAPS):
-            tour = _swap_mutation_local(tour)
+            tour = _swap_mutation_local(tour, rng)
         population.append(tour)
 
     return population

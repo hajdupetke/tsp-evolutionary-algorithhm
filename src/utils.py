@@ -1,5 +1,5 @@
 """
-utils.py — Data loading and tour evaluation utilities (Coder 1).
+utils.py — Data loading and tour evaluation utilities.
 
 Provides:
   - load_cities: parse TSPLIB .tsp coordinate files

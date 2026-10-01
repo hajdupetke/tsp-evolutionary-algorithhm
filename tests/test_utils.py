@@ -1,4 +1,4 @@
-"""Tests for src/utils.py (Coder 1 — Phase 1)."""
+"""Tests for src/utils.py"""
 
 from pathlib import Path
 from src.utils import *
