@@ -21,8 +21,17 @@ def population_split(p, r):
     return keep_n, num_pairs
 
 
-def run_ga(D, params, rng, init_fn, cost_fn):
-    """Run the genetic algorithm."""
+def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
+    """Run the genetic algorithm (Report Algorithm 1).
+
+    - P <- init_fn(n, p, rng): Pierre's text says p random permutations;
+      Peter Sec. 2.3 replaces this with informed tours (smart_population).
+      init_fn injectable so Exp. 1 can compare both.
+    - Fitness F = 1/C (Eq. 5); tournament on costs == tournament on fitness.
+    - Ps <- best (1-r)p elites + 2*(rp/2) OX children (2 per pair, roles swapped).
+    - SwapMutation applied to fraction m of Ps. Best-ever tracked and returned.
+    - verbose: print init + every log_interval generations (flush=True).
+    """
     
     # Get the settings from params
     n = len(D)
@@ -43,10 +52,14 @@ def run_ga(D, params, rng, init_fn, cost_fn):
     num_mutants = int(m * p)
 
     start = time.time()
+    if verbose:
+        print(f"  [GA] init: n={n} p={p} r={r} m={m} G={G} k={k} ...", flush=True)
 
     # Create the first population and calculate its costs
     population = init_fn(n, p, rng)
     costs = [cost_fn(tour, D) for tour in population]
+    if verbose:
+        print(f"  [GA] init done in {time.time()-start:.1f}s, init_best={min(costs):.1f}", flush=True)
 
     # Save the best tour found so far
     best_index = min(range(p), key=lambda i: costs[i])
@@ -58,12 +71,10 @@ def run_ga(D, params, rng, init_fn, cost_fn):
 
     # Repeat for each generation
     for g in range(G):
-        new_population = []
-
-        # Select survivors using tournament selection
-        for _ in range(keep_n):
-            i = tournament_selection(costs, k, rng)
-            new_population.append(population[i][:])
+        # Survivors: elitist best keep_n = (1-r)p per Algorithm 1,
+        # NOT tournament (previous code used tournament here).
+        ranked = sorted(range(p), key=lambda i: costs[i])
+        new_population = [population[i][:] for i in ranked[:keep_n]]
 
         # Create children using crossover
         for _ in range(num_pairs):
@@ -97,6 +108,10 @@ def run_ga(D, params, rng, init_fn, cost_fn):
         # Save both the current best and the best ever found
         history_gen.append(generation_best)
         history_best.append(best_cost)
+        if verbose and ((g + 1) % log_interval == 0 or g + 1 == G):
+            elapsed = time.time() - start
+            print(f"  [GA] gen {g+1}/{G} best={best_cost:.1f} gen_best={generation_best:.1f} elapsed={elapsed:.1f}s",
+                  flush=True)
 
     return {
         "best_tour": best_tour,
