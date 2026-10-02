@@ -41,7 +41,9 @@ Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, init='smart'`.
 │   ├── ga.py               ← main GA loop (Algorithm 1) + random-search baseline
 │   ├── experiments.py      ← all 5 experiments, writes results/results.txt
 │   └── plot.py             ← convergence + tour + scaling figures
-├── data/                   ← berlin52, burma14, kroA100, kroA200 (.tsp)
+├── data/                   ← berlin52, burma14, kroA100, kroA200 (.tsp, gitignored — see Setup)
+├── scripts/
+│   └── download_data.py      ← fetches the 4 .tsp files into data/ (stdlib only)
 ├── results/                ← results.txt + .png figures (generated)
 ├── tests/ + src/tests/     ← pytest suite (44 tests)
 └── README.md
@@ -57,6 +59,21 @@ pip install matplotlib
 # or with uv:
 uv sync
 ```
+
+## Setup: datasets
+
+`data/` is gitignored, so a fresh clone has no `.tsp` files. Download them first:
+
+```bash
+python scripts/download_data.py              # fetch all 4 datasets into data/
+python scripts/download_data.py --force      # re-download even if files exist
+python scripts/download_data.py berlin52     # fetch a single dataset
+```
+
+The script tries multiple mirrors (GitHub raw mirrors first, official
+Heidelberg/ZIB sources as fallback) and validates each file
+(`DIMENSION` + `NODE_COORD_SECTION`), so a dead mirror doesn't break setup.
+Existing valid files are skipped unless `--force` is given.
 
 ## Usage
 
