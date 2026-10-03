@@ -248,8 +248,8 @@ def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verb
 def experiment_population_size(cities, dataset_name="berlin52",
                                values=(50, 100, 150, 200),
                                params=None, runs=10, base_seed=2000, verbose=True,
-                               weight_type="EUC_2D"):
-    """Experiment 3 — vary population size p."""
+                               weight_type="EUC_2D", init_method="random"):
+    """Experiment 3 — vary population size p (random init to avoid smart ceiling)."""
     params = dict(DEFAULT_PARAMS if params is None else params)
     rows = []
     histories = {}
@@ -264,7 +264,7 @@ def experiment_population_size(cities, dataset_name="berlin52",
             done += 1
             if verbose:
                 _log(f"  [exp3 {done}/{total}] p={p} run={run+1}/{runs} ...")
-            res = run_single(cities, "smart", cfg, seed, weight_type=weight_type)
+            res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "p": p, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
@@ -279,8 +279,8 @@ def experiment_population_size(cities, dataset_name="berlin52",
 def experiment_mutation_rate(cities, dataset_name="berlin52",
                              values=(0.05, 0.1, 0.2, 0.4),
                              params=None, runs=10, base_seed=3000, verbose=True,
-                             weight_type="EUC_2D"):
-    """Experiment 4 — vary mutation rate m."""
+                             weight_type="EUC_2D", init_method="random"):
+    """Experiment 4 — vary mutation rate m (random init to avoid smart ceiling)."""
     params = dict(DEFAULT_PARAMS if params is None else params)
     rows = []
     histories = {}
@@ -295,7 +295,7 @@ def experiment_mutation_rate(cities, dataset_name="berlin52",
             done += 1
             if verbose:
                 _log(f"  [exp4 {done}/{total}] m={m} run={run+1}/{runs} ...")
-            res = run_single(cities, "smart", cfg, seed, weight_type=weight_type)
+            res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "m": m, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
@@ -310,8 +310,8 @@ def experiment_mutation_rate(cities, dataset_name="berlin52",
 def experiment_replacement_rate(cities, dataset_name="berlin52",
                                 values=(0.3, 0.5, 0.7, 0.9),
                                 params=None, runs=10, base_seed=4000, verbose=True,
-                                weight_type="EUC_2D"):
-    """Experiment 5 — vary replacement rate r."""
+                                weight_type="EUC_2D", init_method="random"):
+    """Experiment 5 — vary replacement rate r (random init to avoid smart ceiling)."""
     params = dict(DEFAULT_PARAMS if params is None else params)
     rows = []
     histories = {}
@@ -326,7 +326,7 @@ def experiment_replacement_rate(cities, dataset_name="berlin52",
             done += 1
             if verbose:
                 _log(f"  [exp5 {done}/{total}] r={r} run={run+1}/{runs} ...")
-            res = run_single(cities, "smart", cfg, seed, weight_type=weight_type)
+            res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "r": r, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
@@ -359,7 +359,8 @@ def _write_results(path, sections):
 
 def run_all_experiments(base_seed=42, runs=10, generations=500,
                         population_size=100, results_path=None,
-                        dataset="berlin52", scaling_datasets=None):
+                        dataset="berlin52", scaling_datasets=None,
+                        suite_init_method="random"):
     """Run all 5 experiments and write ``results/results.txt``.
 
     :param base_seed: master seed; every trial derives its own seed from it.
@@ -370,6 +371,8 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         (single-dataset experiments). Default "berlin52" (eski davranış).
     :param scaling_datasets: dataset key list for exp2 (scaling).
         None => all datasets in DATASETS (eski davranış).
+    :param suite_init_method: init for exp3/4/5 (default "random" to avoid
+        smart ceiling where init_best == final_best on berlin52).
     :return: dict with row-lists and histories per experiment (for plotting).
     """
     if dataset not in DATASETS:
@@ -389,7 +392,7 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
     cities, weight_type = load_instance(str(DATA_DIR / DATASETS[dataset]))
     n_trials = (len(INIT_METHODS) + len(scaling_datasets) + 4 + 4 + 4) * runs
     _log(f"[suite] {n_trials} GA trials total (runs={runs}, G={generations}, p={population_size}, "
-         f"dataset={dataset}, scaling={scaling_datasets}). This takes a while with smart init — progress below.")
+          f"dataset={dataset}, scaling={scaling_datasets}, suite_init={suite_init_method}). Progress below.")
     tall0 = time.time()
 
     _log(f"[exp1] init comparison on {dataset} (runs={runs}, G={generations}) ...")
@@ -403,22 +406,22 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         datasets=scaling_datasets, params=base_params, runs=runs, base_seed=base_seed + 1000)
     _log(f"[exp2] done, suite elapsed={time.time()-tall0:.0f}s")
 
-    _log(f"[exp3] population size on {dataset} ...")
+    _log(f"[exp3] population size on {dataset} (init={suite_init_method}) ...")
     exp3_rows, exp3_hist = experiment_population_size(
         cities, dataset_name=dataset, params=base_params, runs=runs, base_seed=base_seed + 2000,
-        weight_type=weight_type)
+        weight_type=weight_type, init_method=suite_init_method)
     _log(f"[exp3] done, suite elapsed={time.time()-tall0:.0f}s")
 
-    _log(f"[exp4] mutation rate on {dataset} ...")
+    _log(f"[exp4] mutation rate on {dataset} (init={suite_init_method}) ...")
     exp4_rows, exp4_hist = experiment_mutation_rate(
         cities, dataset_name=dataset, params=base_params, runs=runs, base_seed=base_seed + 3000,
-        weight_type=weight_type)
+        weight_type=weight_type, init_method=suite_init_method)
     _log(f"[exp4] done, suite elapsed={time.time()-tall0:.0f}s")
 
-    _log(f"[exp5] replacement rate on {dataset} ...")
+    _log(f"[exp5] replacement rate on {dataset} (init={suite_init_method}) ...")
     exp5_rows, exp5_hist = experiment_replacement_rate(
         cities, dataset_name=dataset, params=base_params, runs=runs, base_seed=base_seed + 4000,
-        weight_type=weight_type)
+        weight_type=weight_type, init_method=suite_init_method)
     _log(f"[exp5] done, suite elapsed={time.time()-tall0:.0f}s")
 
     sections = [

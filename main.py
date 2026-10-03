@@ -46,6 +46,9 @@ def parse_args():
     p.add_argument("--suite-dataset", default="berlin52",
                    choices=sorted(DATASETS.keys()),
                    help="Dataset for exp1/3/4/5 in the full suite (default: berlin52).")
+    p.add_argument("--suite-init-method", default="random",
+                   choices=["random", "nn", "angle", "smart"],
+                   help="Init for exp3/4/5 (default: random to avoid smart ceiling).")
     p.add_argument("--scaling-datasets", nargs="*", default=None,
                    choices=sorted(DATASETS.keys()),
                    help="Datasets for exp2 scaling (default: all datasets).")
@@ -113,7 +116,8 @@ def main():
                               generations=args.generations,
                               population_size=args.population_size,
                               dataset=args.suite_dataset,
-                              scaling_datasets=args.scaling_datasets)
+                              scaling_datasets=args.scaling_datasets,
+                              suite_init_method=args.suite_init_method)
     # Figures from experiment histories
     plot_convergence_comparison(
         out["exp1"][1], title=f"Init comparison ({args.suite_dataset} mean over runs)",
