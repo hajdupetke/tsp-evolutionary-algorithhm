@@ -1,0 +1,7 @@
+SWEEP SUMMARY: best trial per init
+dataset,init,best_cost
+kroA100,random,25915.00
+kroA100,nn,21373.00
+kroA100,angle,23454.00
+kroA100,smart,21453.00
+
