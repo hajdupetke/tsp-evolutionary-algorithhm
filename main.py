@@ -10,11 +10,17 @@ from src.utils import load_cities, load_instance, calculate_cost
 from src.experiments import (
     run_single,
     run_all_experiments,
+    run_full_sweep,
     DEFAULT_PARAMS,
     KNOWN_OPTIMALS,
     DATASETS,
     DATA_DIR,
     RESULTS_DIR,
+    SWEEP_P_VALUES,
+    SWEEP_G_VALUES,
+    SWEEP_M_VALUES,
+    SWEEP_R_VALUES,
+    INIT_METHODS,
 )
 from src.plot import (
     plot_convergence,
@@ -37,9 +43,9 @@ def parse_args():
                    help="Replacement rate r (default: 0.7).")
     p.add_argument("--mutation-rate", type=float, default=0.1,
                    help="Mutation rate m (default: 0.1).")
-    p.add_argument("--init-method", default="smart",
+    p.add_argument("--init-method", default="random",
                    choices=["random", "nn", "angle", "smart"],
-                   help="Init method for the sanity run (default: smart).")
+                   help="Init method for the sanity run (default: random, per Algorithm 1).")
     p.add_argument("--dataset", default="berlin52",
                    choices=sorted(DATASETS.keys()),
                    help="Dataset for the sanity run (default: berlin52).")
@@ -58,6 +64,23 @@ def parse_args():
                    help="Only do the sanity run, skip the full experiment suite.")
     p.add_argument("--quick", action="store_true",
                    help="Smoke test: G=20, runs=2 (overrides --generations/--runs).")
+    p.add_argument("--full-sweep", action="store_true",
+                   help="Run full grid sweep: every dataset x (init/p/G/m/r), "
+                        "plots to results/<dataset>/*.png with settings footer.")
+    p.add_argument("--sweep-p", nargs="*", type=int, default=None,
+                   help=f"Population sizes for sweep (default: {' '.join(map(str, SWEEP_P_VALUES))}).")
+    p.add_argument("--sweep-g", nargs="*", type=int, default=None,
+                   help=f"Generations for sweep (default: {' '.join(map(str, SWEEP_G_VALUES))}).")
+    p.add_argument("--sweep-m", nargs="*", type=float, default=None,
+                   help=f"Mutation rates for sweep (default: {' '.join(map(str, SWEEP_M_VALUES))}).")
+    p.add_argument("--sweep-r", nargs="*", type=float, default=None,
+                   help=f"Replacement rates for sweep (default: {' '.join(map(str, SWEEP_R_VALUES))}).")
+    p.add_argument("--sweep-datasets", nargs="*", default=None,
+                   choices=sorted(DATASETS.keys()),
+                   help="Datasets for the full sweep (default: all datasets).")
+    p.add_argument("--sweep-inits", nargs="*", default=None,
+                   choices=sorted(INIT_METHODS),
+                   help="Init methods for sweep exp1 (default: all four).")
     return p.parse_args()
 
 
@@ -106,8 +129,27 @@ def main():
     print("Saved convergence + tour plots.", flush=True)
 
     # ---- Full experiment suite --------------------------------------------
-    if args.skip_experiments:
+    if args.skip_experiments and not args.full_sweep:
         print("\nSkipping full experiments (--skip-experiments).", flush=True)
+        return
+
+    if args.full_sweep:
+        print("\nRunning FULL SWEEP ...", flush=True)
+        sweep_out = run_full_sweep(
+            base_seed=args.seed,
+            runs=args.runs,
+            p_values=tuple(args.sweep_p) if args.sweep_p else SWEEP_P_VALUES,
+            g_values=tuple(args.sweep_g) if args.sweep_g else SWEEP_G_VALUES,
+            m_values=tuple(args.sweep_m) if args.sweep_m else SWEEP_M_VALUES,
+            r_values=tuple(args.sweep_r) if args.sweep_r else SWEEP_R_VALUES,
+            init_methods=tuple(args.sweep_inits) if args.sweep_inits else INIT_METHODS,
+            datasets=args.sweep_datasets,
+            suite_init_method=args.suite_init_method,
+            results_dir=RESULTS_DIR)
+        # Best-tour map per dataset (settings footer included).
+        print(f"\nFull sweep done. Per-dataset folders: {RESULTS_DIR}/<dataset>/", flush=True)
+        for dname, dout in sweep_out.items():
+            print(f"  {dname}: plots + results.txt in {dout['plot_dir']}", flush=True)
         return
 
     print("\nRunning full experiment suite ...", flush=True)

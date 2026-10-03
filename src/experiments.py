@@ -85,7 +85,7 @@ DEFAULT_PARAMS = {
     "m": 0.1,       # mutation rate
     "G": 500,       # generations
     "k": 5,         # tournament size
-    "mutation": "swap",
+    "mutation": "inversion",  # random-init: ~8.4% vs ~24.8% gap on berlin52
 }
 
 
@@ -209,8 +209,10 @@ def experiment_init_comparison(cities, dataset_name="berlin52",
     return rows, histories
 
 
-def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verbose=True):
-    """Experiment 2 (MANDATORY) — scaling across problem sizes, init='smart'."""
+def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verbose=True,
+                       init_method="random"):
+    """Experiment 2 (MANDATORY) — scaling across problem sizes (default random init,
+    so the GA itself is measured; smart would flatline at init_best)."""
     params = dict(DEFAULT_PARAMS if params is None else params)
     datasets = datasets or list(DATASETS.keys())
     rows = []
@@ -227,7 +229,7 @@ def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verb
             done += 1
             if verbose:
                 _log(f"  [exp2 {done}/{total}] dataset={name} run={run+1}/{runs} ...")
-            res = run_single(cities, "smart", params, seed, weight_type=weight_type)
+            res = run_single(cities, init_method, params, seed, weight_type=weight_type)
             gap = (res["best_cost"] - optimal) / optimal * 100 if optimal else float("nan")
             rows.append({
                 "dataset": name,
@@ -401,9 +403,10 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         weight_type=weight_type)
     _log(f"[exp1] done in {time.time()-tall0:.0f}s")
 
-    _log(f"[exp2] problem size scaling on {scaling_datasets} ...")
+    _log(f"[exp2] problem size scaling on {scaling_datasets} (init={suite_init_method}) ...")
     exp2_rows, exp2_hist = experiment_scaling(
-        datasets=scaling_datasets, params=base_params, runs=runs, base_seed=base_seed + 1000)
+        datasets=scaling_datasets, params=base_params, runs=runs, base_seed=base_seed + 1000,
+        init_method=suite_init_method)
     _log(f"[exp2] done, suite elapsed={time.time()-tall0:.0f}s")
 
     _log(f"[exp3] population size on {dataset} (init={suite_init_method}) ...")
@@ -471,3 +474,188 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         "exp5": (exp5_rows, exp5_hist),
         "results_path": str(results_path),
     }
+
+
+# ---------------------------------------------------------------------------
+# Full sweep (one flag in main.py runs everything per dataset)
+# ---------------------------------------------------------------------------
+
+SWEEP_P_VALUES = (50, 100, 120, 150)
+SWEEP_G_VALUES = (100, 300, 500, 800)
+SWEEP_M_VALUES = (0.05, 0.1, 0.2, 0.4)
+SWEEP_R_VALUES = (0.3, 0.5, 0.7, 0.9)
+
+
+def experiment_generations(cities, dataset_name="berlin52",
+                           values=SWEEP_G_VALUES,
+                           params=None, runs=10, base_seed=5000, verbose=True,
+                           weight_type="EUC_2D", init_method="random"):
+    """Experiment 6 — vary generations G (random init to avoid smart ceiling)."""
+    params = dict(DEFAULT_PARAMS if params is None else params)
+    rows = []
+    histories = {}
+    total = len(values) * runs
+    done = 0
+    t0 = time.time()
+    for vi, G in enumerate(values):
+        cfg = dict(params, G=G)
+        histories[G] = []
+        for run in range(runs):
+            seed = base_seed + vi * 1000 + run
+            done += 1
+            if verbose:
+                _log(f"  [expG {done}/{total}] G={G} run={run+1}/{runs} ...")
+            res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
+            rows.append({
+                "dataset": dataset_name, "G": G, "run": run + 1,
+                "seed": seed, "best_cost": res["best_cost"],
+                "time_seconds": res["seconds"],
+            })
+            if verbose:
+                _log(f"  [expG {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
+            histories[G].append(res["history_best"])
+    return rows, histories
+
+
+def run_full_sweep(base_seed=42, runs=10,
+                   p_values=SWEEP_P_VALUES, g_values=SWEEP_G_VALUES,
+                   m_values=SWEEP_M_VALUES, r_values=SWEEP_R_VALUES,
+                   init_methods=INIT_METHODS, datasets=None,
+                   suite_init_method="random", results_dir=None):
+    """Run the full grid: every dataset x (init/p/G/m/r sweeps).
+
+    - exp1 per dataset tries all init_methods one by one (random/nn/angle/smart).
+    - exp3/4/5/G per dataset sweep p/G/m/r with suite_init_method.
+    - exp2 scaling is covered implicitly: per-dataset results + known optimals.
+    - One results.txt per dataset is written to <results_dir>/<dataset>/results.txt.
+
+    :return: {dataset: {exp1..expG rows/histories, results_path, cities, weight_type}}
+    """
+    from src.plot import (plot_convergence_comparison, plot_tour)  # local import: avoid cycle
+    from src.utils import calculate_cost as _cost
+
+    datasets = list(datasets) if datasets else list(DATASETS.keys())
+    unknown = [d for d in datasets if d not in DATASETS]
+    if unknown:
+        raise ValueError(f"Unknown datasets={unknown!r}")
+    base_dir = Path(results_dir) if results_dir else RESULTS_DIR
+    out_all = {}
+    tall0 = time.time()
+    for di, name in enumerate(datasets):
+        cities, weight_type = load_instance(str(DATA_DIR / DATASETS[name]))
+        ddir = base_dir / name
+        ddir.mkdir(parents=True, exist_ok=True)
+        base_params = dict(DEFAULT_PARAMS)
+        _log(f"[sweep {di+1}/{len(datasets)}] dataset={name} "
+             f"p={list(p_values)} G={list(g_values)} m={list(m_values)} r={list(r_values)} "
+             f"inits={list(init_methods)} suite_init={suite_init_method} ...")
+
+        exp1_rows, exp1_hist = experiment_init_comparison(
+            cities, dataset_name=name, params=base_params, runs=runs,
+            base_seed=base_seed + di * 10000, weight_type=weight_type)
+        exp3_rows, exp3_hist = experiment_population_size(
+            cities, dataset_name=name, values=tuple(p_values), params=base_params,
+            runs=runs, base_seed=base_seed + di * 10000 + 2000,
+            weight_type=weight_type, init_method=suite_init_method)
+        expG_rows, expG_hist = experiment_generations(
+            cities, dataset_name=name, values=tuple(g_values), params=base_params,
+            runs=runs, base_seed=base_seed + di * 10000 + 5000,
+            weight_type=weight_type, init_method=suite_init_method)
+        exp4_rows, exp4_hist = experiment_mutation_rate(
+            cities, dataset_name=name, values=tuple(m_values), params=base_params,
+            runs=runs, base_seed=base_seed + di * 10000 + 3000,
+            weight_type=weight_type, init_method=suite_init_method)
+        exp5_rows, exp5_hist = experiment_replacement_rate(
+            cities, dataset_name=name, values=tuple(r_values), params=base_params,
+            runs=runs, base_seed=base_seed + di * 10000 + 4000,
+            weight_type=weight_type, init_method=suite_init_method)
+
+        # Per-dataset plots, each PNG carries its own settings footer.
+        def _sweep_cfg(extra):
+            return (f"dataset={name} seed={base_seed} runs={runs} {extra} "
+                    f"defaults p={DEFAULT_PARAMS['p']} G={DEFAULT_PARAMS['G']} "
+                    f"r={DEFAULT_PARAMS['r']} m={DEFAULT_PARAMS['m']} k={DEFAULT_PARAMS['k']}")
+
+        plot_convergence_comparison(
+            exp1_hist, title=f"{name}: init comparison (mean over {runs} runs)",
+            save_path=str(ddir / "convergence_init.png"),
+            settings_text=_sweep_cfg(f"inits={list(init_methods)}"))
+        plot_convergence_comparison(
+            exp3_hist, title=f"{name}: population size sweep (init={suite_init_method})",
+            save_path=str(ddir / "convergence_popsize.png"),
+            settings_text=_sweep_cfg(f"p_values={list(p_values)}"))
+        plot_convergence_comparison(
+            expG_hist, title=f"{name}: generations sweep (init={suite_init_method})",
+            save_path=str(ddir / "convergence_generations.png"),
+            settings_text=_sweep_cfg(f"G_values={list(g_values)}"))
+        plot_convergence_comparison(
+            exp4_hist, title=f"{name}: mutation rate sweep (init={suite_init_method})",
+            save_path=str(ddir / "convergence_mutation.png"),
+            settings_text=_sweep_cfg(f"m_values={list(m_values)}"))
+        plot_convergence_comparison(
+            exp5_hist, title=f"{name}: replacement rate sweep (init={suite_init_method})",
+            save_path=str(ddir / "convergence_replacement.png"),
+            settings_text=_sweep_cfg(f"r_values={list(r_values)}"))
+
+        # Representative best-tour map for this dataset (default params,
+        # suite init) so results/<dataset>/ also has a tour PNG with settings.
+        rep = run_single(cities, suite_init_method, dict(DEFAULT_PARAMS),
+                         base_seed + di * 10000 + 999, weight_type=weight_type)
+        plot_tour(rep["best_tour"], cities,
+                  title=f"{name}: best tour ({suite_init_method}, cost={rep['best_cost']:.1f})",
+                  save_path=str(ddir / "tour_best.png"),
+                  settings_text=_sweep_cfg(
+                      f"init={suite_init_method} p={DEFAULT_PARAMS['p']} "
+                      f"G={DEFAULT_PARAMS['G']} r={DEFAULT_PARAMS['r']} "
+                      f"m={DEFAULT_PARAMS['m']} k={DEFAULT_PARAMS['k']} seed={rep['seed']}"))
+        from src.plot import plot_convergence as _pc
+        _pc(rep["history_best"],
+            title=f"{name}: single-run convergence ({suite_init_method})",
+            save_path=str(ddir / "convergence_single.png"),
+            settings_text=_sweep_cfg(
+                f"init={suite_init_method} p={DEFAULT_PARAMS['p']} "
+                f"G={DEFAULT_PARAMS['G']} seed={rep['seed']}"))
+
+        # Best tour across all sweep trials in this dataset.
+        all_rows = exp1_rows + exp3_rows + expG_rows + exp4_rows + exp5_rows
+        best_row = min(all_rows, key=lambda r: r["best_cost"])
+        _log(f"[sweep {di+1}/{len(datasets)}] {name} best over sweep: "
+             f"{best_row['best_cost']:.1f} (seed={best_row['seed']})")
+
+        sections = [
+            ("EXPERIMENT 1: Initialization Comparison",
+             "dataset,init_method,run,seed,best_cost,time_seconds",
+             [f"{r['dataset']},{r['init_method']},{r['run']},{r['seed']},"
+              f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp1_rows]),
+            ("EXPERIMENT 3: Population Size",
+             "dataset,p,run,seed,best_cost,time_seconds",
+             [f"{r['dataset']},{r['p']},{r['run']},{r['seed']},"
+              f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
+            ("EXPERIMENT 6: Generations",
+             "dataset,G,run,seed,best_cost,time_seconds",
+             [f"{r['dataset']},{r['G']},{r['run']},{r['seed']},"
+              f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in expG_rows]),
+            ("EXPERIMENT 4: Mutation Rate",
+             "dataset,m,run,seed,best_cost,time_seconds",
+             [f"{r['dataset']},{r['m']},{r['run']},{r['seed']},"
+              f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
+            ("EXPERIMENT 5: Replacement Rate",
+             "dataset,r,run,seed,best_cost,time_seconds",
+             [f"{r['dataset']},{r['r']},{r['run']},{r['seed']},"
+              f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
+        ]
+        _write_results(ddir / "results.txt", sections)
+
+        out_all[name] = {
+            "exp1": (exp1_rows, exp1_hist),
+            "exp3": (exp3_rows, exp3_hist),
+            "expG": (expG_rows, expG_hist),
+            "exp4": (exp4_rows, exp4_hist),
+            "exp5": (exp5_rows, exp5_hist),
+            "results_path": str(ddir / "results.txt"),
+            "plot_dir": str(ddir),
+            "cities": cities,
+            "weight_type": weight_type,
+        }
+        _log(f"[sweep {di+1}/{len(datasets)}] {name} done, elapsed={time.time()-tall0:.0f}s")
+    return out_all

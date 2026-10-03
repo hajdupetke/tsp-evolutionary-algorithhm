@@ -29,9 +29,17 @@ def _mean_histories(histories):
     return [sum(h[i] for h in histories) / len(histories) for i in range(g)]
 
 
+def _annotate_settings(settings_text):
+    """Footer line on the figure so each PNG records its own settings."""
+    if settings_text:
+        plt.figtext(0.5, 0.01, str(settings_text), ha="center",
+                    fontsize=7, wrap=True)
+        plt.subplots_adjust(bottom=0.18)
+
+
 def plot_convergence(history, title="Convergence",
                      save_path="results/convergence_berlin52.png",
-                     ylabel="Best tour cost"):
+                     ylabel="Best tour cost", settings_text=None):
     """Plot best-cost-so-far over generations for a single GA run."""
     _ensure_parent(save_path)
     plt.figure()
@@ -39,6 +47,7 @@ def plot_convergence(history, title="Convergence",
     plt.xlabel("Generation")
     plt.ylabel(ylabel)
     plt.title(title)
+    _annotate_settings(settings_text)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
@@ -47,7 +56,8 @@ def plot_convergence(history, title="Convergence",
 
 def plot_convergence_comparison(histories_dict,
                                 title="Initialization comparison (berlin52)",
-                                save_path="results/convergence_comparison_init.png"):
+                                save_path="results/convergence_comparison_init.png",
+                                settings_text=None):
     """Plot mean convergence curve per configuration.
 
     :param histories_dict: {label: [history_run1, history_run2, ...]}
@@ -62,6 +72,7 @@ def plot_convergence_comparison(histories_dict,
     plt.ylabel("Mean best tour cost")
     plt.title(title)
     plt.legend()
+    _annotate_settings(settings_text)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
@@ -69,7 +80,8 @@ def plot_convergence_comparison(histories_dict,
 
 
 def plot_tour(tour, cities, title="Best tour",
-              save_path="results/tour_berlin52_best.png"):
+              save_path="results/tour_berlin52_best.png",
+              settings_text=None):
     """Draw the tour path on top of the city coordinates."""
     _ensure_parent(save_path)
     xs = [cities[i][0] for i in tour] + [cities[tour[0]][0]]
@@ -80,6 +92,7 @@ def plot_tour(tour, cities, title="Best tour",
     plt.ylabel("y")
     plt.title(title)
     plt.axis("equal")
+    _annotate_settings(settings_text)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
@@ -87,7 +100,8 @@ def plot_tour(tour, cities, title="Best tour",
 
 
 def plot_scaling(exp2_rows, title="Scaling: gap from optimal",
-                 save_path="results/scaling_results.png"):
+                 save_path="results/scaling_results.png",
+                 settings_text=None):
     """Bar chart of mean %-gap from known optimal per dataset (exp2).
 
     :param exp2_rows: row dicts from ``experiment_scaling`` with keys
@@ -109,6 +123,7 @@ def plot_scaling(exp2_rows, title="Scaling: gap from optimal",
     plt.title(title)
     for x, y in zip(order, means):
         plt.text(x, y, f"{y:.2f}%", ha="center", va="bottom", fontsize=8)
+    _annotate_settings(settings_text)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
