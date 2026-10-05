@@ -1,4 +1,37 @@
 
+def roulette_wheel_selection(costs, rng):
+    """
+    Fitness-proportionate (roulette wheel) selection; return its INDEX.
+
+    Mitchell Ch. 9 pseudocode, Pr(h_i) = Fitness(h_i) / sum_j Fitness(h_j),
+    with Fitness = 1 / cost (report Eq. 5). Smaller cost -> higher fitness ->
+    proportionally higher selection probability. One independent spin per
+    call (i.e. sampling WITH replacement), exactly as the textbook's
+    "probabilistically select" steps imply — the best individual can be lost.
+
+    :param costs: list of tour costs, parallel to the population
+    :param rng: random.Random instance
+    :return: index into the population
+    """
+    # Fitness = 1 / cost; costs are strictly positive tour lengths.
+    total = 0.0
+    fitnesses = []
+    for c in costs:
+        f = 1.0 / c if c > 0 else 1.0
+        fitnesses.append(f)
+        total += f
+
+    # Single roulette spin.
+    spin = rng.random() * total
+    cumulative = 0.0
+    for i, f in enumerate(fitnesses):
+        cumulative += f
+        if spin < cumulative:
+            return i
+    # Fallback for float rounding: last individual.
+    return len(costs) - 1
+
+
 def tournament_selection(costs, k, rng):
     """
     Select one individual by tournament and return its INDEX.

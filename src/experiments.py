@@ -83,8 +83,9 @@ DEFAULT_PARAMS = {
     "p": 100,       # population size
     "r": 0.7,       # replacement rate (fraction replaced by crossover)
     "m": 0.1,       # mutation rate
-    "G": 500,       # generations
-    "k": 5,         # tournament size
+    "G": 500,       # generations (textbook fitness_threshold yerine)
+    "selection": "tournament",  # probabilistic survivors+parents (board steps 1+2 share one operator); "roulette" = exact textbook Pr(h_i)
+    "k": 5,         # tournament size, only used when selection="tournament"
     "mutation": "inversion",  # random-init: ~8.4% vs ~24.8% gap on berlin52
 }
 

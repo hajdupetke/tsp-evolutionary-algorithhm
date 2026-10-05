@@ -2,6 +2,7 @@ import time
 
 from src.operators import (
     tournament_selection,
+    roulette_wheel_selection,
     order_crossover,
     swap_mutation,
     inversion_mutation,
@@ -22,14 +23,25 @@ def population_split(p, r):
 
 
 def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
-    """Run the genetic algorithm (Report Algorithm 1).
+    """Run the genetic algorithm (Report Algorithm 1 / Mitchell Ch. 9 Fig. 9.1).
 
     - P <- init_fn(n, p, rng): Pierre's text says p random permutations;
       Peter Sec. 2.3 replaces this with informed tours (smart_population).
       init_fn injectable so Exp. 1 can compare both.
-    - Fitness F = 1/C (Eq. 5); tournament on costs == tournament on fitness.
-    - Ps <- best (1-r)p elites + 2*(rp/2) OX children (2 per pair, roles swapped).
+    - Fitness F = 1/C (Eq. 5). BOTH selection steps are probabilistic with
+      the SAME operator, as the pseudocode requires (steps 1+2 share Pr(h_i)):
+      default "tournament" (k=5, tutoring-approved operator swap — roulette
+      on 1/L has almost no pressure on TSP since tour lengths cluster, e.g.
+      best/worst probability ratio ~1.06 late in a run), opt-in "roulette"
+      gives the exact textbook Pr(h_i) = F(h_i)/sum_j F(h_j). Sampling is
+      WITH replacement (one independent draw per pick), so the best
+      individual can be lost — NO elitism, per Mitchell/whiteboard.
+      The previous code's bug was deterministic top-(1-r)p elites here.
+    - Ps <- (1-r)p probabilistic survivors + 2*(rp/2) OX children (2 per pair).
     - SwapMutation applied to fraction m of Ps. Best-ever tracked and returned.
+    - Termination: fixed G generations instead of the textbook's
+      fitness_threshold (threshold needs a known target tour length, which
+      the algorithm would not know in general).
     - verbose: print init + every log_interval generations (flush=True).
     """
     
@@ -39,7 +51,10 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
     r = params["r"]
     m = params["m"]
     G = params["G"]
-    k = params["k"]
+    k = params.get("k", 5)
+    selection = params.get("selection", "tournament")
+    if selection not in ("roulette", "tournament"):
+        raise ValueError(f"Unknown selection={selection!r}, expected 'roulette' or 'tournament'")
 
     # Choose which mutation to use
     if params["mutation"] == "inversion":
@@ -53,7 +68,7 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
 
     start = time.time()
     if verbose:
-        print(f"  [GA] init: n={n} p={p} r={r} m={m} G={G} k={k} ...", flush=True)
+        print(f"  [GA] init: n={n} p={p} r={r} m={m} G={G} selection={selection} k={k} ...", flush=True)
 
     # Create the first population and calculate its costs
     population = init_fn(n, p, rng)
@@ -71,15 +86,23 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
 
     # Repeat for each generation
     for g in range(G):
-        # Survivors: elitist best keep_n = (1-r)p per Algorithm 1,
-        # NOT tournament (previous code used tournament here).
-        ranked = sorted(range(p), key=lambda i: costs[i])
-        new_population = [population[i][:] for i in ranked[:keep_n]]
+        # Single selection operator for BOTH textbook steps, so survivors
+        # and parents always agree with each other and with the report.
+        def select_one():
+            if selection == "tournament":
+                return tournament_selection(costs, k, rng)
+            return roulette_wheel_selection(costs, rng)
 
-        # Create children using crossover
+        # Step 1 — survivors: probabilistically select (1-r)p members of P
+        # with the shared operator, WITH replacement. No elitism: the best
+        # individual is NOT guaranteed to survive, per Mitchell/whiteboard.
+        new_population = [population[select_one()][:] for _ in range(keep_n)]
+
+        # Step 2 — crossover: probabilistically select r*p/2 pairs from P
+        # via the same Pr(h_i), two OX children per pair (roles swapped).
         for _ in range(num_pairs):
-            i = tournament_selection(costs, k, rng)
-            j = tournament_selection(costs, k, rng)
+            i = select_one()
+            j = select_one()
 
             child1 = order_crossover(population[i], population[j], rng)
             child2 = order_crossover(population[j], population[i], rng)
