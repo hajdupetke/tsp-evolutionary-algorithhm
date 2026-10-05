@@ -14,10 +14,10 @@ Interface notes (important):
 
 Experiments (default datasets; override via run_all_experiments(dataset=..., scaling_datasets=...)):
   1. Initialization comparison: random / nn / angle / smart (default berlin52)
-  2. Problem size scaling: burma14 / berlin52 / kroA100 / kroA200 (smart)
-  3. Population size: 50 / 100 / 150 / 200 (default berlin52, smart)
-  4. Mutation rate: 0.05 / 0.1 / 0.2 / 0.4 (default berlin52, smart)
-  5. Replacement rate: 0.3 / 0.5 / 0.7 / 0.9 (default berlin52, smart)
+  2. Problem size scaling: burma14 / berlin52 / kroA100 / kroA200 / pcb442 / pr1002 (random)
+  3. Population size: 50 / 100 / 150 / 200 (default berlin52, random)
+  4. Mutation rate: 0.05 / 0.1 / 0.2 / 0.4 (default berlin52, random)
+  5. Replacement rate: 0.3 / 0.5 / 0.7 / 0.9 (default berlin52, random)
 
 Each configuration is repeated ``runs`` times with seeds
 ``base_seed + run_index`` (plus a per-experiment offset) so results are
@@ -62,12 +62,15 @@ KNOWN_OPTIMALS = {
     #     kroA100=21282 also in ResearchGate BBO table "KroA100 optimal = 21,282").
     #   - burma14 = 3323 (Heidelberg STSP list; arxiv:2606.09529 "burma14 ... known
     #     optimum 3,323"; arxiv:2106.05948 "optimal tour length of 3323 [1]"; GEO distances).
+    #   - pcb442 = 50778, pr1002 = 259045 (Heidelberg STSP list; EUC_2D).
     # Comparable only with TSPLIB edge weights (utils.calculate_cost):
-    # EUC_2D for berlin52/kroA100/kroA200, GEO for burma14.
+    # EUC_2D for berlin52/kroA100/kroA200/pcb442/pr1002, GEO for burma14.
     "burma14": 3323,
     "berlin52": 7542,
     "kroA100": 21282,
     "kroA200": 29368,
+    "pcb442": 50778,
+    "pr1002": 259045,
 }
 
 DATASETS = {
@@ -75,6 +78,8 @@ DATASETS = {
     "berlin52": "berlin52.tsp",
     "kroA100": "kroA100.tsp",
     "kroA200": "kroA200.tsp",
+    "pcb442": "pcb442.tsp",
+    "pr1002": "pr1002.tsp",
 }
 
 INIT_METHODS = ("random", "nn", "angle", "smart")
@@ -148,12 +153,20 @@ def _log(msg):
     print(msg, flush=True)
 
 
+def _gap(best_cost, dataset_name):
+    """gap_percent vs KNOWN_OPTIMALS (nan if unknown)."""
+    optimal = KNOWN_OPTIMALS.get(dataset_name, float("nan"))
+    if optimal and optimal == optimal:  # not nan, not zero
+        return (best_cost - optimal) / optimal * 100
+    return float("nan")
+
+
 def run_single(cities, init_method, params, seed, verbose=False, log_interval=100,
                weight_type="EUC_2D"):
     """Run one GA trial with a dedicated seed.
 
-    :return: dict with best_tour, best_cost, history_best, history_gen,
-             seconds, seed, init_method
+    :return: dict with best_tour, best_cost, init_best, history_best, history_gen,
+             history_diversity, seconds, seed, init_method
     """
     rng = random.Random(seed)
     init_fn = make_init_fn(cities, init_method, weight_type)
@@ -202,6 +215,9 @@ def experiment_init_comparison(cities, dataset_name="berlin52",
                 "run": run + 1,
                 "seed": seed,
                 "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
+                "known_optimal": KNOWN_OPTIMALS.get(dataset_name, float("nan")),
+                "gap_percent": _gap(res["best_cost"], dataset_name),
                 "time_seconds": res["seconds"],
             })
             if verbose:
@@ -235,9 +251,11 @@ def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verb
             rows.append({
                 "dataset": name,
                 "num_cities": len(cities),
+                "init_method": init_method,
                 "run": run + 1,
                 "seed": seed,
                 "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
                 "known_optimal": optimal,
                 "gap_percent": gap,
                 "time_seconds": res["seconds"],
@@ -271,6 +289,9 @@ def experiment_population_size(cities, dataset_name="berlin52",
             rows.append({
                 "dataset": dataset_name, "p": p, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
+                "known_optimal": KNOWN_OPTIMALS.get(dataset_name, float("nan")),
+                "gap_percent": _gap(res["best_cost"], dataset_name),
                 "time_seconds": res["seconds"],
             })
             if verbose:
@@ -302,6 +323,9 @@ def experiment_mutation_rate(cities, dataset_name="berlin52",
             rows.append({
                 "dataset": dataset_name, "m": m, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
+                "known_optimal": KNOWN_OPTIMALS.get(dataset_name, float("nan")),
+                "gap_percent": _gap(res["best_cost"], dataset_name),
                 "time_seconds": res["seconds"],
             })
             if verbose:
@@ -333,6 +357,9 @@ def experiment_replacement_rate(cities, dataset_name="berlin52",
             rows.append({
                 "dataset": dataset_name, "r": r, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
+                "known_optimal": KNOWN_OPTIMALS.get(dataset_name, float("nan")),
+                "gap_percent": _gap(res["best_cost"], dataset_name),
                 "time_seconds": res["seconds"],
             })
             if verbose:
@@ -363,7 +390,7 @@ def _write_results(path, sections):
 def run_all_experiments(base_seed=42, runs=10, generations=500,
                         population_size=100, results_path=None,
                         dataset="berlin52", scaling_datasets=None,
-                        suite_init_method="random"):
+                        suite_init_method="random", init_methods=None):
     """Run all 5 experiments and write ``results/results.txt``.
 
     :param base_seed: master seed; every trial derives its own seed from it.
@@ -374,15 +401,12 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         (single-dataset experiments). Default "berlin52" (eski davranış).
     :param scaling_datasets: dataset key list for exp2 (scaling).
         None => all datasets in DATASETS (eski davranış).
-    :param suite_init_method: kept for backward compatibility; per-init sweeps
-        now cover every method in ``init_methods`` so this is only a fallback
-        when ``init_methods`` is empty (defaults to ``suite_init_method``).
-    :return: {dataset: {exp1 rows/histories, per_init: {init: {...}},
-        results_path, plot_dir, cities, weight_type}}
+    :param suite_init_method: init used for exp2/3/4/5 single-init sweeps
+        (default "random" so the GA itself is measured, not the 2-opt init).
+    :param init_methods: unused, kept for backward compatibility with callers
+        that pass the full-sweep init list; ignored by this suite.
+    :return: dict with row-lists and histories per experiment (for plotting).
     """
-    if not init_methods:
-        init_methods = (suite_init_method,)
-    init_methods = tuple(init_methods)
     if dataset not in DATASETS:
         raise ValueError(f"Unknown dataset={dataset!r}, expected one of {sorted(DATASETS)}")
     if scaling_datasets is None:
@@ -435,26 +459,30 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
 
     sections = [
         ("EXPERIMENT 1: Initialization Comparison",
-         "dataset,init_method,run,seed,best_cost,time_seconds",
+         "dataset,init_method,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
          [f"{r['dataset']},{r['init_method']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp1_rows]),
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp1_rows]),
         ("EXPERIMENT 2: Problem Size Scaling",
-         "dataset,num_cities,run,seed,best_cost,known_optimal,gap_percent,time_seconds",
-         [f"{r['dataset']},{r['num_cities']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['known_optimal']},"
+         "dataset,num_cities,init_method,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
+         [f"{r['dataset']},{r['num_cities']},{r.get('init_method', suite_init_method)},{r['run']},{r['seed']},"
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
           f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp2_rows]),
         ("EXPERIMENT 3: Population Size",
-         "dataset,p,run,seed,best_cost,time_seconds",
+         "dataset,p,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
          [f"{r['dataset']},{r['p']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
         ("EXPERIMENT 4: Mutation Rate",
-         "dataset,m,run,seed,best_cost,time_seconds",
+         "dataset,m,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
          [f"{r['dataset']},{r['m']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
         ("EXPERIMENT 5: Replacement Rate",
-         "dataset,r,run,seed,best_cost,time_seconds",
+         "dataset,r,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
          [f"{r['dataset']},{r['r']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
     ]
     _write_results(results_path, sections)
     print(f"Results written to {results_path}")
@@ -515,6 +543,9 @@ def experiment_generations(cities, dataset_name="berlin52",
             rows.append({
                 "dataset": dataset_name, "G": G, "run": run + 1,
                 "seed": seed, "best_cost": res["best_cost"],
+                "init_best": res.get("init_best", res["best_cost"]),
+                "known_optimal": KNOWN_OPTIMALS.get(dataset_name, float("nan")),
+                "gap_percent": _gap(res["best_cost"], dataset_name),
                 "time_seconds": res["seconds"],
             })
             if verbose:
@@ -531,14 +562,15 @@ def run_full_sweep(base_seed=42, runs=10,
     """Run the full grid: every dataset x (init/p/G/m/r sweeps).
 
     - exp1 per dataset tries all init_methods one by one (random/nn/angle/smart).
+    - exp2 scaling runs once across all sweep datasets with random init
+      (the mandatory problem-size experiment).
     - exp3/4/5/G per dataset sweep p/G/m/r with suite_init_method.
-    - exp2 scaling is covered implicitly: per-dataset results + known optimals.
-    - One results.txt per dataset is written to <results_dir>/<dataset>/results.txt.
+    - One results.txt per dataset is written to <results_dir>/<dataset>/results.txt
+      plus a consolidated <results_dir>/results.txt with every experiment.
 
     :return: {dataset: {exp1..expG rows/histories, results_path, cities, weight_type}}
     """
     from src.plot import (plot_convergence_comparison, plot_tour)  # local import: avoid cycle
-    from src.utils import calculate_cost as _cost
 
     datasets = list(datasets) if datasets else list(DATASETS.keys())
     unknown = [d for d in datasets if d not in DATASETS]
@@ -547,6 +579,12 @@ def run_full_sweep(base_seed=42, runs=10,
     base_dir = Path(results_dir) if results_dir else RESULTS_DIR
     out_all = {}
     tall0 = time.time()
+    # EXPERIMENT 2 (mandatory): scaling across problem sizes with random init,
+    # so the GA itself is measured. Runs once, covers all sweep datasets.
+    _log(f"[sweep exp2] problem size scaling on {datasets} (init=random) ...")
+    scaling_rows, scaling_hist = experiment_scaling(
+        datasets=datasets, params=dict(DEFAULT_PARAMS), runs=runs,
+        base_seed=base_seed + 1000, init_method="random")
     for di, name in enumerate(datasets):
         cities, weight_type = load_instance(str(DATA_DIR / DATASETS[name]))
         ddir = base_dir / name
@@ -633,21 +671,25 @@ def run_full_sweep(base_seed=42, runs=10,
 
             sections = [
                 (f"EXPERIMENT 3 ({init}): Population Size",
-                 "dataset,init,p,run,seed,best_cost,time_seconds",
+                 "dataset,init,p,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
                  [f"{r['dataset']},{init},{r['p']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
+                  f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+                  f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
                 (f"EXPERIMENT 6 ({init}): Generations",
-                 "dataset,init,G,run,seed,best_cost,time_seconds",
+                 "dataset,init,G,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
                  [f"{r['dataset']},{init},{r['G']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in expG_rows]),
+                  f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+                  f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in expG_rows]),
                 (f"EXPERIMENT 4 ({init}): Mutation Rate",
-                 "dataset,init,m,run,seed,best_cost,time_seconds",
+                 "dataset,init,m,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
                  [f"{r['dataset']},{init},{r['m']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
+                  f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+                  f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
                 (f"EXPERIMENT 5 ({init}): Replacement Rate",
-                 "dataset,init,r,run,seed,best_cost,time_seconds",
+                 "dataset,init,r,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
                  [f"{r['dataset']},{init},{r['r']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
+                  f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+                  f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
             ]
             _write_results(idir / "results.txt", sections)
             per_init[init] = {
@@ -681,4 +723,39 @@ def run_full_sweep(base_seed=42, runs=10,
             "weight_type": weight_type,
         }
         _log(f"[sweep {di+1}/{len(datasets)}] {name} done, elapsed={time.time()-tall0:.0f}s")
+    # Consolidated master file: the single numerical deliverable.
+    # Per-dataset folders remain as supporting detail.
+    master_sections = [
+        ("EXPERIMENT 2: Problem Size Scaling (random init)",
+         "dataset,num_cities,init_method,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
+         [f"{r['dataset']},{r['num_cities']},{r.get('init_method', 'random')},{r['run']},{r['seed']},"
+          f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in scaling_rows]),
+    ]
+    for name in datasets:
+        d = out_all[name]
+        exp1_rows = d["exp1"][0]
+        master_sections.append(
+            (f"EXPERIMENT 1 ({name}): Initialization Comparison",
+             "dataset,init_method,run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
+             [f"{r['dataset']},{r['init_method']},{r['run']},{r['seed']},"
+              f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+              f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp1_rows]))
+        for init in init_methods:
+            p = d["per_init"][init]
+            for title, rows, key in (
+                (f"EXPERIMENT 3 ({name}/{init}): Population Size", p["exp3"][0], "p"),
+                (f"EXPERIMENT 6 ({name}/{init}): Generations", p["expG"][0], "G"),
+                (f"EXPERIMENT 4 ({name}/{init}): Mutation Rate", p["exp4"][0], "m"),
+                (f"EXPERIMENT 5 ({name}/{init}): Replacement Rate", p["exp5"][0], "r"),
+            ):
+                master_sections.append(
+                    (title,
+                     f"dataset,init,{key},run,seed,init_best,best_cost,known_optimal,gap_percent,time_seconds",
+                     [f"{r['dataset']},{init},{r[key]},{r['run']},{r['seed']},"
+                      f"{r['init_best']:.2f},{r['best_cost']:.2f},{r['known_optimal']},"
+                      f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in rows]))
+    _write_results(base_dir / "results.txt", master_sections)
+    _log(f"[sweep] consolidated results written to {base_dir / 'results.txt'}")
+    out_all["_scaling"] = {"rows": scaling_rows, "histories": scaling_hist}
     return out_all

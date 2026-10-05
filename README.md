@@ -41,9 +41,9 @@ Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, init='smart'`.
 │   ├── ga.py               ← main GA loop (Algorithm 1) + random-search baseline
 │   ├── experiments.py      ← all 5 experiments, writes results/results.txt
 │   └── plot.py             ← convergence + tour + scaling figures
-├── data/                   ← berlin52, burma14, kroA100, kroA200 (.tsp, gitignored — see Setup)
+├── data/                   ← berlin52, burma14, kroA100, kroA200, pcb442, pr1002 (.tsp)
 ├── scripts/
-│   └── download_data.py      ← fetches the 4 .tsp files into data/ (stdlib only)
+│   └── download_data.py      ← fetches the 6 .tsp files into data/ (stdlib only)
 ├── results/                ← results.txt + .png figures (generated)
 ├── tests/ + src/tests/     ← pytest suite (44 tests)
 └── README.md
@@ -62,10 +62,11 @@ uv sync
 
 ## Setup: datasets
 
-`data/` is gitignored, so a fresh clone has no `.tsp` files. Download them first:
+`data/` ships with all 6 `.tsp` files committed, so a fresh clone runs
+immediately. To re-download (or fetch after a clean checkout):
 
 ```bash
-python scripts/download_data.py              # fetch all 4 datasets into data/
+python scripts/download_data.py              # fetch all 6 datasets into data/
 python scripts/download_data.py --force      # re-download even if files exist
 python scripts/download_data.py berlin52     # fetch a single dataset
 ```
@@ -107,14 +108,17 @@ identical output.
 | # | Varies | Values | Dataset(s) | Runs |
 |---|--------|--------|------------|------|
 | 1 | init method | random, nn, angle, smart | berlin52 | 10 |
-| 2 | problem size | burma14, berlin52, kroA100, kroA200 | all, smart init | 10 |
+| 2 | problem size | burma14, berlin52, kroA100, kroA200, pcb442, pr1002 | all, random init | 10 |
 | 3 | population `p` | 50, 100, 150, 200 | berlin52 | 10 |
 | 4 | mutation `m` | 0.05, 0.1, 0.2, 0.4 | berlin52 | 10 |
 | 5 | replacement `r` | 0.3, 0.5, 0.7, 0.9 | berlin52 | 10 |
+| 6 | generations `G` | 100, 300, 500, 800 | berlin52 (full sweep) | 10 |
 
 Known optimals used for gap computation: burma14 3323, berlin52 7542,
-kroA100 21282, kroA200 29368. `results/results.txt` contains one CSV-style
-section per experiment (`dataset,...,run,seed,best_cost,...,time_seconds`).
+kroA100 21282, kroA200 29368, pcb442 50778, pr1002 259045.
+`results/results.txt` is the single consolidated deliverable (one CSV-style
+section per experiment: `...,init_best,best_cost,known_optimal,gap_percent,time_seconds`).
+Per-dataset `results/<dataset>/` folders hold supporting detail.
 
 ## Tests
 
@@ -128,12 +132,13 @@ seed reproducibility.
 
 ## Distances (TSPLIB-compliant)
 
-- `EUC_2D` (berlin52, kroA100/200): `int(sqrt(dx²+dy²)+0.5)` per edge.
+- `EUC_2D` (berlin52, kroA100/200, pcb442, pr1002): `int(sqrt(dx²+dy²)+0.5)` per edge.
 - `GEO` (burma14): great-circle with `RRR=6378.388` per TSPLIB spec.
 - `load_instance` reads `EDGE_WEIGHT_TYPE` from the `.tsp` header;
   `calculate_cost(tour, cities, weight_type)` and all init heuristics
   follow it, so gaps vs. `KNOWN_OPTIMALS` (Heidelberg STSP list:
-  berlin52 7542, kroA100 21282, kroA200 29368, burma14 3323) are exact.
+  berlin52 7542, kroA100 21282, kroA200 29368, burma14 3323,
+  pcb442 50778, pr1002 259045) are exact.
   `distance()` (raw Euclidean) is kept only for backward compatibility.
 
 ## Performance notes (CPU vs GPU)

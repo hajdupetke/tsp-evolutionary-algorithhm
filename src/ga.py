@@ -81,8 +81,11 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
     best_tour = population[best_index][:]
     best_cost = costs[best_index]
 
+    init_best = best_cost
+
     history_best = []
     history_gen = []
+    history_diversity = [len({tuple(t) for t in population})]
 
     # Repeat for each generation
     for g in range(G):
@@ -131,6 +134,7 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
         # Save both the current best and the best ever found
         history_gen.append(generation_best)
         history_best.append(best_cost)
+        history_diversity.append(len({tuple(t) for t in population}))
         if verbose and ((g + 1) % log_interval == 0 or g + 1 == G):
             elapsed = time.time() - start
             print(f"  [GA] gen {g+1}/{G} best={best_cost:.1f} gen_best={generation_best:.1f} elapsed={elapsed:.1f}s",
@@ -139,8 +143,10 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
     return {
         "best_tour": best_tour,
         "best_cost": best_cost,
+        "init_best": init_best,
         "history_best": history_best,
         "history_gen": history_gen,
+        "history_diversity": history_diversity,
         "seconds": time.time() - start,
     }
 
