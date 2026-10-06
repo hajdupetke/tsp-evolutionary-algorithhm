@@ -121,8 +121,10 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
     return {
         "best_tour": best_tour,
         "best_cost": best_cost,
+        "init_best": init_best,
         "history_best": history_best,
         "history_gen": history_gen,
+        "history_diversity": history_diversity,
         "seconds": time.time() - start,
     }
 
