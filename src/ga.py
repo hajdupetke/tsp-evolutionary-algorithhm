@@ -112,6 +112,7 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
         # Save both the current best and the best ever found
         history_gen.append(generation_best)
         history_best.append(best_cost)
+        history_diversity.append(len(set(tuple(t) for t in population)))
         if verbose and ((g + 1) % log_interval == 0 or g + 1 == G):
             elapsed = time.time() - start
             print(f"  [GA] gen {g+1}/{G} best={best_cost:.1f} gen_best={generation_best:.1f} elapsed={elapsed:.1f}s",
