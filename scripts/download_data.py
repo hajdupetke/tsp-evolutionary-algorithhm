@@ -28,6 +28,8 @@ DATASETS: dict[str, int] = {
     "berlin52": 52,
     "kroA100": 100,
     "kroA200": 200,
+    "pcb442": 442,
+    "pr1002": 1002,
 }
 
 HEIDELBERG_NEW = "https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/tsp"
