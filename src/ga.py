@@ -28,7 +28,7 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
       Peter Sec. 2.3 replaces this with informed tours (smart_population).
       init_fn injectable so Exp. 1 can compare both.
     - Fitness F = 1/C (Eq. 5); tournament on costs == tournament on fitness.
-    - Ps <- best (1-r)p elites + 2*(rp/2) OX children (2 per pair, roles swapped).
+    - Ps <- (1-r)p tournament survivors + 2*(rp/2) OX children (2 per pair, roles swapped).
     - SwapMutation applied to fraction m of Ps. Best-ever tracked and returned.
     - verbose: print init + every log_interval generations (flush=True).
     """
@@ -71,10 +71,11 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
 
     # Repeat for each generation
     for g in range(G):
-        # Survivors: elitist best keep_n = (1-r)p per Algorithm 1,
-        # NOT tournament (previous code used tournament here).
-        ranked = sorted(range(p), key=lambda i: costs[i])
-        new_population = [population[i][:] for i in ranked[:keep_n]]
+        # Survivors: keep_n = (1-r)p picked by tournament selection
+        new_population = []
+        for _ in range(keep_n):
+            i = tournament_selection(costs, k, rng)
+            new_population.append(population[i][:])
 
         # Create children using crossover
         for _ in range(num_pairs):
@@ -111,7 +112,7 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
         if verbose and ((g + 1) % log_interval == 0 or g + 1 == G):
             elapsed = time.time() - start
             print(f"  [GA] gen {g+1}/{G} best={best_cost:.1f} gen_best={generation_best:.1f} elapsed={elapsed:.1f}s",
-                  flush=True)
+                flush=True)
 
     return {
         "best_tour": best_tour,
