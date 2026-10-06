@@ -108,7 +108,7 @@ def plot_scaling(exp2_rows, title="Scaling: gap from optimal",
                       dataset / best_cost / known_optimal / gap_percent.
     """
     _ensure_parent(save_path)
-    order = [d for d in ("burma14", "berlin52", "kroA100", "kroA200")
+    order = [d for d in ("burma14", "berlin52", "kroA100", "kroA200", "pcb442", "pr1002")
              if any(r["dataset"] == d for r in exp2_rows)]
     if not order:  # fall back to whatever datasets are present
         order = sorted({r["dataset"] for r in exp2_rows})

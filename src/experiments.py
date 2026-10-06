@@ -68,6 +68,8 @@ KNOWN_OPTIMALS = {
     "berlin52": 7542,
     "kroA100": 21282,
     "kroA200": 29368,
+    "pcb442": 50778,
+    "pr1002": 259045,
 }
 
 DATASETS = {
@@ -75,7 +77,12 @@ DATASETS = {
     "berlin52": "berlin52.tsp",
     "kroA100": "kroA100.tsp",
     "kroA200": "kroA200.tsp",
+    "pcb442": "pcb442.tsp",
+    "pr1002": "pr1002.tsp",
 }
+
+# Datasets for the per-init parameter sweeps; the larger ones are only used for scaling.
+SWEEP_DATASETS = ("burma14", "berlin52", "kroA100", "kroA200")
 
 INIT_METHODS = ("random", "nn", "angle", "smart")
 
@@ -173,6 +180,18 @@ def run_single(cities, init_method, params, seed, verbose=False, log_interval=10
     return result
 
 
+def _metrics(dataset_name, res):
+    """Result columns shared by every experiment row."""
+    optimal = KNOWN_OPTIMALS[dataset_name]
+    return {
+        "init_method": res["init_method"],
+        "best_cost": res["best_cost"],
+        "init_best": res["init_best"],
+        "gap_percent": (res["best_cost"] - optimal) / optimal * 100,
+        "time_seconds": res["seconds"],
+    }
+
+
 # ---------------------------------------------------------------------------
 # The 5 experiments
 # ---------------------------------------------------------------------------
@@ -197,11 +216,9 @@ def experiment_init_comparison(cities, dataset_name="berlin52",
             res = run_single(cities, method, params, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name,
-                "init_method": method,
                 "run": run + 1,
                 "seed": seed,
-                "best_cost": res["best_cost"],
-                "time_seconds": res["seconds"],
+                **_metrics(dataset_name, res),
             })
             if verbose:
                 _log(f"  [exp1 {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -223,23 +240,20 @@ def experiment_scaling(datasets=None, params=None, runs=10, base_seed=1000, verb
     for idx, name in enumerate(datasets):
         cities, weight_type = load_instance(str(DATA_DIR / DATASETS[name]))
         histories[name] = []
-        optimal = KNOWN_OPTIMALS.get(name, float("nan"))
+        optimal = KNOWN_OPTIMALS[name]
         for run in range(runs):
             seed = base_seed + idx * 1000 + run
             done += 1
             if verbose:
                 _log(f"  [exp2 {done}/{total}] dataset={name} run={run+1}/{runs} ...")
             res = run_single(cities, init_method, params, seed, weight_type=weight_type)
-            gap = (res["best_cost"] - optimal) / optimal * 100 if optimal else float("nan")
             rows.append({
                 "dataset": name,
                 "num_cities": len(cities),
                 "run": run + 1,
                 "seed": seed,
-                "best_cost": res["best_cost"],
                 "known_optimal": optimal,
-                "gap_percent": gap,
-                "time_seconds": res["seconds"],
+                **_metrics(name, res),
             })
             if verbose:
                 _log(f"  [exp2 {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -269,8 +283,7 @@ def experiment_population_size(cities, dataset_name="berlin52",
             res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "p": p, "run": run + 1,
-                "seed": seed, "best_cost": res["best_cost"],
-                "time_seconds": res["seconds"],
+                "seed": seed, **_metrics(dataset_name, res),
             })
             if verbose:
                 _log(f"  [exp3 {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -300,8 +313,7 @@ def experiment_mutation_rate(cities, dataset_name="berlin52",
             res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "m": m, "run": run + 1,
-                "seed": seed, "best_cost": res["best_cost"],
-                "time_seconds": res["seconds"],
+                "seed": seed, **_metrics(dataset_name, res),
             })
             if verbose:
                 _log(f"  [exp4 {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -331,8 +343,7 @@ def experiment_replacement_rate(cities, dataset_name="berlin52",
             res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "r": r, "run": run + 1,
-                "seed": seed, "best_cost": res["best_cost"],
-                "time_seconds": res["seconds"],
+                "seed": seed, **_metrics(dataset_name, res),
             })
             if verbose:
                 _log(f"  [exp5 {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -359,6 +370,17 @@ def _write_results(path, sections):
             f.write("\n")
 
 
+FLOAT_COLS = {"best_cost", "init_best", "gap_percent", "time_seconds"}
+
+
+def _section(title, rows, cols):
+    """Build one (title, header, lines) block for the results file."""
+    def fmt(col, value):
+        return f"{value:.2f}" if col in FLOAT_COLS else str(value)
+    lines = [",".join(fmt(c, r[c]) for c in cols) for r in rows]
+    return title, ",".join(cols), lines
+
+
 def run_all_experiments(base_seed=42, runs=10, generations=500,
                         population_size=100, results_path=None,
                         dataset="berlin52", scaling_datasets=None,
@@ -379,9 +401,6 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
     :return: {dataset: {exp1 rows/histories, per_init: {init: {...}},
         results_path, plot_dir, cities, weight_type}}
     """
-    if not init_methods:
-        init_methods = (suite_init_method,)
-    init_methods = tuple(init_methods)
     if dataset not in DATASETS:
         raise ValueError(f"Unknown dataset={dataset!r}, expected one of {sorted(DATASETS)}")
     if scaling_datasets is None:
@@ -432,28 +451,18 @@ def run_all_experiments(base_seed=42, runs=10, generations=500,
         weight_type=weight_type, init_method=suite_init_method)
     _log(f"[exp5] done, suite elapsed={time.time()-tall0:.0f}s")
 
+    tail = ["run", "seed", "best_cost", "init_best", "gap_percent", "time_seconds"]
     sections = [
-        ("EXPERIMENT 1: Initialization Comparison",
-         "dataset,init_method,run,seed,best_cost,time_seconds",
-         [f"{r['dataset']},{r['init_method']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp1_rows]),
-        ("EXPERIMENT 2: Problem Size Scaling",
-         "dataset,num_cities,run,seed,best_cost,known_optimal,gap_percent,time_seconds",
-         [f"{r['dataset']},{r['num_cities']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['known_optimal']},"
-          f"{r['gap_percent']:.2f},{r['time_seconds']:.2f}" for r in exp2_rows]),
-        ("EXPERIMENT 3: Population Size",
-         "dataset,p,run,seed,best_cost,time_seconds",
-         [f"{r['dataset']},{r['p']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
-        ("EXPERIMENT 4: Mutation Rate",
-         "dataset,m,run,seed,best_cost,time_seconds",
-         [f"{r['dataset']},{r['m']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
-        ("EXPERIMENT 5: Replacement Rate",
-         "dataset,r,run,seed,best_cost,time_seconds",
-         [f"{r['dataset']},{r['r']},{r['run']},{r['seed']},"
-          f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
+        _section("EXPERIMENT 1: Initialization Comparison", exp1_rows,
+                 ["dataset", "init_method"] + tail),
+        _section("EXPERIMENT 2: Problem Size Scaling", exp2_rows,
+                 ["dataset", "num_cities", "init_method", "known_optimal"] + tail),
+        _section("EXPERIMENT 3: Population Size", exp3_rows,
+                 ["dataset", "init_method", "p"] + tail),
+        _section("EXPERIMENT 4: Mutation Rate", exp4_rows,
+                 ["dataset", "init_method", "m"] + tail),
+        _section("EXPERIMENT 5: Replacement Rate", exp5_rows,
+                 ["dataset", "init_method", "r"] + tail),
     ]
     _write_results(results_path, sections)
     print(f"Results written to {results_path}")
@@ -513,8 +522,7 @@ def experiment_generations(cities, dataset_name="berlin52",
             res = run_single(cities, init_method, cfg, seed, weight_type=weight_type)
             rows.append({
                 "dataset": dataset_name, "G": G, "run": run + 1,
-                "seed": seed, "best_cost": res["best_cost"],
-                "time_seconds": res["seconds"],
+                "seed": seed, **_metrics(dataset_name, res),
             })
             if verbose:
                 _log(f"  [expG {done}/{total}] done: best={res['best_cost']:.1f} {res['seconds']:.1f}s elapsed={time.time()-t0:.0f}s")
@@ -531,21 +539,35 @@ def run_full_sweep(base_seed=42, runs=10,
 
     - exp1 per dataset tries all init_methods one by one (random/nn/angle/smart).
     - exp3/4/5/G per dataset sweep p/G/m/r with suite_init_method.
-    - exp2 scaling is covered implicitly: per-dataset results + known optimals.
-    - One results.txt per dataset is written to <results_dir>/<dataset>/results.txt.
+    - exp2 scaling runs once over every dataset in DATASETS (suite_init_method).
+    - One results.txt per dataset is written to <results_dir>/<dataset>/results.txt;
+      everything is also collected in <results_dir>/results.txt.
 
     :return: {dataset: {exp1..expG rows/histories, results_path, cities, weight_type}}
     """
     from src.plot import (plot_convergence_comparison, plot_tour)  # local import: avoid cycle
     from src.utils import calculate_cost as _cost
 
-    datasets = list(datasets) if datasets else list(DATASETS.keys())
+    datasets = list(datasets) if datasets else list(SWEEP_DATASETS)
     unknown = [d for d in datasets if d not in DATASETS]
     if unknown:
         raise ValueError(f"Unknown datasets={unknown!r}")
     base_dir = Path(results_dir) if results_dir else RESULTS_DIR
     out_all = {}
+    all_sections = []
     tall0 = time.time()
+
+    _log("[sweep] problem size scaling ...")
+    exp2_rows, exp2_hist = experiment_scaling(
+        params=dict(DEFAULT_PARAMS), runs=runs, base_seed=base_seed + 1000,
+        init_method=suite_init_method)
+    from src.plot import plot_scaling
+    plot_scaling(exp2_rows, save_path=str(base_dir / "scaling_results.png"))
+    tail = ["run", "seed", "best_cost", "init_best", "gap_percent", "time_seconds"]
+    all_sections.append(_section(
+        "EXPERIMENT 2: Problem Size Scaling", exp2_rows,
+        ["dataset", "num_cities", "init_method", "known_optimal"] + tail))
+
     for di, name in enumerate(datasets):
         cities, weight_type = load_instance(str(DATA_DIR / DATASETS[name]))
         ddir = base_dir / name
@@ -558,6 +580,10 @@ def run_full_sweep(base_seed=42, runs=10,
         exp1_rows, exp1_hist = experiment_init_comparison(
             cities, dataset_name=name, params=base_params, runs=runs,
             base_seed=base_seed + di * 100000, weight_type=weight_type)
+
+        all_sections.append(_section(
+            f"EXPERIMENT 1: Initialization Comparison ({name})", exp1_rows,
+            ["dataset", "init_method"] + tail))
 
         # Per-dataset plot comparing inits, with its own settings footer.
         def _sweep_cfg(extra, init=None):
@@ -631,23 +657,16 @@ def run_full_sweep(base_seed=42, runs=10,
                     f"seed={rep['seed']}", init=init))
 
             sections = [
-                (f"EXPERIMENT 3 ({init}): Population Size",
-                 "dataset,init,p,run,seed,best_cost,time_seconds",
-                 [f"{r['dataset']},{init},{r['p']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp3_rows]),
-                (f"EXPERIMENT 6 ({init}): Generations",
-                 "dataset,init,G,run,seed,best_cost,time_seconds",
-                 [f"{r['dataset']},{init},{r['G']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in expG_rows]),
-                (f"EXPERIMENT 4 ({init}): Mutation Rate",
-                 "dataset,init,m,run,seed,best_cost,time_seconds",
-                 [f"{r['dataset']},{init},{r['m']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp4_rows]),
-                (f"EXPERIMENT 5 ({init}): Replacement Rate",
-                 "dataset,init,r,run,seed,best_cost,time_seconds",
-                 [f"{r['dataset']},{init},{r['r']},{r['run']},{r['seed']},"
-                  f"{r['best_cost']:.2f},{r['time_seconds']:.2f}" for r in exp5_rows]),
+                _section(f"EXPERIMENT 3 ({init}): Population Size", exp3_rows,
+                         ["dataset", "init_method", "p"] + tail),
+                _section(f"EXPERIMENT 6 ({init}): Generations", expG_rows,
+                         ["dataset", "init_method", "G"] + tail),
+                _section(f"EXPERIMENT 4 ({init}): Mutation Rate", exp4_rows,
+                         ["dataset", "init_method", "m"] + tail),
+                _section(f"EXPERIMENT 5 ({init}): Replacement Rate", exp5_rows,
+                         ["dataset", "init_method", "r"] + tail),
             ]
+            all_sections += sections
             _write_results(idir / "results.txt", sections)
             per_init[init] = {
                 "exp3": (exp3_rows, exp3_hist),
@@ -680,4 +699,6 @@ def run_full_sweep(base_seed=42, runs=10,
             "weight_type": weight_type,
         }
         _log(f"[sweep {di+1}/{len(datasets)}] {name} done, elapsed={time.time()-tall0:.0f}s")
+    _write_results(base_dir / "results.txt", all_sections)
+    _log(f"[sweep] consolidated results: {base_dir / 'results.txt'}")
     return out_all
