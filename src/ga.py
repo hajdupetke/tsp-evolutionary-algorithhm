@@ -66,8 +66,11 @@ def run_ga(D, params, rng, init_fn, cost_fn, verbose=False, log_interval=100):
     best_tour = population[best_index][:]
     best_cost = costs[best_index]
 
+    init_best = best_cost
+
     history_best = []
     history_gen = []
+    history_diversity = []
 
     # Repeat for each generation
     for g in range(G):
