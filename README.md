@@ -4,7 +4,7 @@ Genetic Algorithm (GA) for the **Travelling Salesman Problem (TSP)**,
 implemented in pure Python (stdlib + matplotlib).
 
 Target benchmark: **berlin52** (52 cities, known optimum **7542**).
-Example result with default settings: **7542.0** (gap 0.00%, TSPLIB metric).
+Example result with `--init-method smart`: **7542.0** (gap 0.00%, TSPLIB metric).
 
 Group members: 
 - Christos Zampounis
@@ -25,7 +25,7 @@ Mitchell (1997) GA template adapted to TSP permutation representation:
 | Selection       | Tournament selection (k=5)    | Report Section 3  |
 | Crossover       | Order Crossover (OX)          | Hussain et al. (2017) |
 | Mutation        | Swap mutation                 | Report Section 3  |
-| Survivor policy | Keep best (1−r)·p intact      | Algorithm 1       |
+| Survivor policy | Tournament selection (k=5)    | Algorithm 1       |
 
 Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, init='smart'`.
 
