@@ -1,0 +1,272 @@
+<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">A head start</h1>
+      <p class="module-subtitle">Where the first 100 routes come from, two speed tricks worth knowing by name, and a trap that hides your results.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Sea level or base camp?</h2>
+        <p>A climber can start at the coast or get a lift to base camp. Evolution works either way, but the starting point decides how much climbing is left. The scout file offers four starting points.</p>
+
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🎲</div>
+            <h4 class="pattern-title">random</h4>
+            <p class="pattern-desc">Shuffle the cities 100 times. Awful routes, maximum variety.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🧲</div>
+            <h4 class="pattern-title">nn</h4>
+            <p class="pattern-desc">Always drive to the closest unvisited city, then tidy up the route.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🧭</div>
+            <h4 class="pattern-title">angle</h4>
+            <p class="pattern-desc">Stand in the middle of the map and visit cities in the order a clock hand would sweep past them.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧠</div>
+            <h4 class="pattern-title">smart</h4>
+            <p class="pattern-desc">Half the crowd from nn, half from angle.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Nearest neighbour: always take the closest</h2>
+        <p>This is a <span class="term" data-definition="A method that always takes whatever looks best right now, without planning ahead. Fast and simple, but it can paint itself into a corner.">greedy</span> method. It never looks ahead, so the last few cities are often far apart.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-keyword">while</span> not_visited:</span>
+<span class="code-line">        current = tour[-<span class="code-number">1</span>]</span>
+<span class="code-line">        row = dist_matrix[current]</span>
+<span class="code-line">        nearest = <span class="code-function">min</span>(not_visited, key=<span class="code-keyword">lambda</span> city: row[city])</span>
+<span class="code-line">        tour.<span class="code-function">append</span>(nearest)</span>
+<span class="code-line">        not_visited.<span class="code-function">remove</span>(nearest)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Keep going while any city is still unvisited.</p>
+              <p class="tl">Where are we now? The last city on the route so far.</p>
+              <p class="tl">Open the distance table at the row for this city.</p>
+              <p class="tl">Among the unvisited cities, find the one with the smallest distance in that row.</p>
+              <p class="tl">Drive there: add it to the end of the route.</p>
+              <p class="tl">Cross it off the unvisited list.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Tidying up: uncross the roads</h2>
+        <p>If two legs of a route cross each other, there is always a shorter way to connect the same four cities. The tidy-up step, called <span class="term" data-definition="A way to improve a route: look for two road segments that would be shorter if reconnected the other way, reverse the stretch between them, and repeat until no such pair is left.">2-opt</span>, hunts for those and fixes them.</p>
+
+        <div style="display:flex; gap: var(--space-6); flex-wrap:wrap; justify-content:center; margin: var(--space-6) 0;">
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); text-align:center;">
+            <svg viewBox="0 0 180 130" width="220" role="img" aria-label="Two road segments crossing each other">
+              <line x1="20" y1="20" x2="160" y2="110" style="stroke: var(--color-error); stroke-width:3" />
+              <line x1="20" y1="110" x2="160" y2="20" style="stroke: var(--color-error); stroke-width:3" />
+              <circle cx="20" cy="20" r="7" style="fill: var(--color-text)" /><text x="32" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">a</text>
+              <circle cx="160" cy="110" r="7" style="fill: var(--color-text)" /><text x="140" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">b</text>
+              <circle cx="20" cy="110" r="7" style="fill: var(--color-text)" /><text x="32" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">c</text>
+              <circle cx="160" cy="20" r="7" style="fill: var(--color-text)" /><text x="140" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">d</text>
+            </svg>
+            <p style="margin:0; font-size: var(--text-sm); color: var(--color-text-secondary);">Before: a to b, and c to d</p>
+          </div>
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); text-align:center;">
+            <svg viewBox="0 0 180 130" width="220" role="img" aria-label="The same four cities joined without crossing">
+              <line x1="20" y1="20" x2="20" y2="110" style="stroke: var(--color-success); stroke-width:3" />
+              <line x1="160" y1="110" x2="160" y2="20" style="stroke: var(--color-success); stroke-width:3" />
+              <circle cx="20" cy="20" r="7" style="fill: var(--color-text)" /><text x="32" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">a</text>
+              <circle cx="160" cy="110" r="7" style="fill: var(--color-text)" /><text x="140" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">b</text>
+              <circle cx="20" cy="110" r="7" style="fill: var(--color-text)" /><text x="32" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">c</text>
+              <circle cx="160" cy="20" r="7" style="fill: var(--color-text)" /><text x="140" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">d</text>
+            </svg>
+            <p style="margin:0; font-size: var(--text-sm); color: var(--color-text-secondary);">After: a to c, and b to d</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">            <span class="code-keyword">for</span> j <span class="code-keyword">in</span> <span class="code-function">range</span>(i + <span class="code-number">1</span>, n):</span>
+<span class="code-line">                c = tour[j]</span>
+<span class="code-line">                d = tour[(j + <span class="code-number">1</span>) % n]</span>
+<span class="code-line">                <span class="code-keyword">if</span> D[a][b] + D[c][d] &gt; D[a][c] + D[b][d]:</span>
+<span class="code-line">                    tour[i:j + <span class="code-number">1</span>] = <span class="code-function">reversed</span>(tour[i:j + <span class="code-number">1</span>])</span>
+<span class="code-line">                    is_improved = <span class="code-keyword">True</span></span>
+<span class="code-line">                    improved_here = <span class="code-keyword">True</span></span>
+<span class="code-line">                    <span class="code-keyword">break</span>  <span class="code-comment"># restart after any improvement</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">We already hold one road, from a to b. Now try every later road in the route as its partner.</p>
+              <p class="tl">That later road runs from c…</p>
+              <p class="tl">…to d. The "% n" wraps around, so the road after the last city leads back to the first.</p>
+              <p class="tl">Are the two current roads longer, added together, than the two roads we would get by reconnecting?</p>
+              <p class="tl">If so, reverse the stretch between them, which performs the reconnection.</p>
+              <p class="tl">Note that we found an improvement.</p>
+              <p class="tl">Stop scanning and start the search again from the top.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Only measure what changed</strong>
+            <p>The check compares four roads. It does not re-measure the whole route, because every other road stays the same. Engineers call this "delta evaluation". The project's README credits it with cutting a test run from about 20 seconds to about 0.2.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Work it out once, look it up forever</h2>
+        <p>The <code>D[a][b]</code> lookups above read from a <span class="term" data-definition="A table with one row and one column per city. The number where row a meets column b is the distance between those two cities, worked out in advance.">distance matrix</span>. Storing answers so you never compute them twice is called <span class="term" data-definition="Saving the result of slow work so that the next time you need it, you look it up instead of redoing it.">caching</span>. For 200 cities one table holds 40,000 distances.</p>
+
+        <p>Here the scout builds routes for the "nn" starting method. Look at what each call is given.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-keyword">if</span> method == <span class="code-string">"nn"</span>:</span>
+<span class="code-line">            <span class="code-keyword">for</span> i <span class="code-keyword">in</span> <span class="code-function">range</span>(p):</span>
+<span class="code-line">                tour = <span class="code-function">nearest_neighbour_tour</span>(cities, start_city=i % n, weight_type=weight_type)</span>
+<span class="code-line">                tour = <span class="code-function">two_opt_improvement</span>(tour, cities, weight_type=weight_type)</span>
+<span class="code-line">                population.<span class="code-function">append</span>(tour)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">If the chosen starting method is "nn"…</p>
+              <p class="tl">…do the following once for each of the 100 routes we need.</p>
+              <p class="tl">Build a nearest-neighbour route. The starting city cycles through the cities: 0, 1, 2… and back to 0 when they run out.</p>
+              <p class="tl">Tidy that route with 2-opt.</p>
+              <p class="tl">Add it to the crowd.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">🔍</div>
+          <div class="callout-content">
+            <strong class="callout-title">A missed lookup table</strong>
+            <p>Neither call is handed a ready-made distance table, so each one builds its own: 200 tables for 100 routes. The "smart" method in initialization.py builds the table once and passes it along. I have not timed how much this costs, but it is repeated work, and it is the kind of thing you can now spot and ask an AI tool to fix: "build the distance matrix once and pass it in."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What the head start buys</h2>
+        <p>These bars show the best single run for each starting method on the 200-city map, taken from the project's saved results. Shorter is better. The shortest possible is 29,368.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-6); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm);">
+          <div style="display:grid; grid-template-columns: 5em 1fr; gap: var(--space-3) var(--space-3); align-items:center;">
+            <span>random</span>
+            <div><div style="width:100%; background: var(--color-actor-1); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">64,007 · 118% over</div></div>
+            <span>angle</span>
+            <div><div style="width:68%; background: var(--color-actor-3); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">43,782 · 49% over</div></div>
+            <span>nn</span>
+            <div><div style="width:46.4%; background: var(--color-actor-2); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">29,724 · 1.2% over</div></div>
+            <span>smart</span>
+            <div><div style="width:46.4%; background: var(--color-actor-5); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">29,704 · 1.1% over</div></div>
+          </div>
+        </div>
+
+        <p>On the 52-city map the same table reads 7727, 7685, 7542 and 7542. Both nn and smart land exactly on the best possible route.</p>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The ceiling trap</strong>
+            <p>If the starting routes are already at or near perfect, the genetic algorithm has nothing left to improve, and every setting looks equally good. The code says so itself: experiments on settings default to random starts "to avoid smart ceiling". When you measure a change, make sure there is room for the measurement to move.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. The starting routes were already at the ceiling, so no setting could show a difference. Switching to random starts gives the settings something to work on."
+               data-explanation-wrong="Not quite. Identical flat lines mean nothing improved after the start. Ask what the starting routes looked like.">
+            <h3 class="quiz-question">You compare four mutation rates on berlin52 using the nn starting method. All four progress curves are flat lines sitting on top of each other at 7542. What is going on?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Mutation rate has no effect on genetic algorithms.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The chart code is drawing the same line four times by mistake.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The starting routes were already the best possible, so there was nothing for any setting to improve.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right. The starting city cycles 0 to 13 and then repeats, and nothing in nearest neighbour or 2-opt is random. The same start always gives the same route, so the crowd holds many duplicates."
+               data-explanation-wrong="Look at 'start_city=i % n' in the code above. With 14 cities, route number 14 starts from city 0 again. Does anything random happen after that?">
+            <h3 class="quiz-question">The burma14 map has 14 cities. You ask for 100 starting routes with the nn method. How many genuinely different routes can you get?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At most 14, one per starting city. The rest are exact repeats.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>100, because each route is built separately.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It varies from run to run depending on the seed.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Yes. Only the roads being reconnected change, so only those need measuring. Naming the technique gets you the right fix in one request."
+               data-explanation-wrong="Not quite. The waste is in re-measuring roads that did not change. There is a name for measuring only the difference.">
+            <h3 class="quiz-question">An AI tool writes a tidy-up step that re-measures the entire route for every pair of roads it considers. On 1,000 cities it is painfully slow. What do you ask for?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Use a faster computer."</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Use delta evaluation: compare only the two roads removed and the two roads added."</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Skip the tidy-up step for large maps."</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
