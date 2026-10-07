@@ -1,0 +1,255 @@
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">The puzzle and the run</h1>
+      <p class="module-subtitle">What this project solves, and what happens in the seconds after you press Enter.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A delivery driver with 52 stops</h2>
+        <p>Picture a courier in Berlin with 52 parcels. They must visit every address once and end up back at the depot, driving as little as possible. That is the <span class="term" data-definition="A famous puzzle: find the shortest round trip that visits every city exactly once. Usually shortened to TSP.">Travelling Salesman Problem</span>, and this project is a program that tackles it.</p>
+
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">📍</div>
+            <h4 class="pattern-title">52 cities</h4>
+            <p class="pattern-desc">The main test map is called berlin52. Each city is just a pair of x and y coordinates in a text file.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">♾️</div>
+            <h4 class="pattern-title">About 7.8 × 10<sup>65</sup> routes</h4>
+            <p class="pattern-desc">That is how many different round trips exist for 52 cities. No computer can check them all.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🏁</div>
+            <h4 class="pattern-title">7542</h4>
+            <p class="pattern-desc">The shortest possible berlin52 route, proven by researchers. It is the target every run is measured against.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The trick: breed routes instead of checking them</h2>
+        <p>Since checking every route is impossible, the program borrows an idea from nature. It keeps a crowd of candidate routes and lets the good ones have "children". This approach is called a <span class="term" data-definition="A search method that imitates evolution: keep a group of candidate answers, let the better ones combine and change slightly, and repeat. Often shortened to GA.">genetic algorithm</span>.</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>Make 100 routes</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>Measure each one</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>Mix the short ones</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>Tweak a few at random</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <p>Repeat 500 times</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Good enough, fast</strong>
+            <p>A method that finds a very good answer quickly, without promising the perfect one, is called a heuristic. Much real software works this way, from map directions to delivery scheduling. When you ask an AI tool for an "optimal" solution to a huge problem, a heuristic is usually what you should expect back.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Follow one run from start to finish</h2>
+        <p>You type one line into the <span class="term" data-definition="The text window where you type commands for your computer instead of clicking buttons.">terminal</span>: <code>python main.py --skip-experiments</code>. Step through what happens next.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"You type: python main.py --skip-experiments"},
+          {"highlight":"flow-actor-2","label":"main.py reads your options. With none given it uses seed 42, 100 routes, 500 generations.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"main.py asks utils.py to open the map file data/berlin52.tsp","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-2","label":"utils.py hands back 52 coordinate pairs and the distance rule this map uses","packet":true,"from":"actor-3","to":"actor-2"},
+          {"highlight":"flow-actor-4","label":"main.py passes the cities, the settings and the seed to the genetic algorithm in ga.py","packet":true,"from":"actor-2","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"ga.py breeds 500 generations of 100 routes. That is about 50,000 route measurements."},
+          {"highlight":"flow-actor-2","label":"ga.py returns the best route it ever saw, its length, and the progress history","packet":true,"from":"actor-4","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"main.py re-measures that route itself, checks every city appears once, then prints the gap"},
+          {"highlight":"flow-actor-5","label":"main.py sends the history and the route to plot.py","packet":true,"from":"actor-2","to":"actor-5"},
+          {"highlight":"flow-actor-1","label":"Two pictures land in the results folder: a progress curve and a map of the route","packet":true,"from":"actor-5","to":"actor-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🧑</div>
+              <span>You</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🚪</div>
+              <span>main.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">📏</div>
+              <span>utils.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🧬</div>
+              <span>ga.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-5">
+              <div class="flow-actor-icon">📈</div>
+              <span>plot.py</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="flow-packet"></div>
+
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The scoreboard, in code</h2>
+        <p>Here are the lines in <code>main.py</code> that print the result. The key number is the <span class="term" data-definition="How far the answer is from the best possible one, as a percentage. A gap of 0% means the program found the perfect route.">gap</span>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    optimal = KNOWN_OPTIMALS[args.dataset]</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"\nResult:        {best_cost:.4f}"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Known optimal: {optimal:.4f}"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Gap:           {(best_cost - optimal) / optimal * 100:.4f}%"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Time:          {res['seconds']:.2f}s"</span>, flush=<span class="code-keyword">True</span>)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Look up the proven shortest length for the chosen map in a small table.</p>
+              <p class="tl">Show the length of the best route we found.</p>
+              <p class="tl">Show the proven best next to it.</p>
+              <p class="tl">Show how much longer ours is, as a percentage of the proven best.</p>
+              <p class="tl">Show how long the run took.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Just before printing, <code>main.py</code> refuses to trust the answer blindly. These two <span class="term" data-definition="A line that says 'this must be true'. If it is not, the program stops immediately with an error instead of carrying on with bad data.">assert</span> lines are a self-check.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Sanity check: recompute cost independently (same TSPLIB metric)</span></span>
+<span class="code-line">    <span class="code-keyword">assert</span> <span class="code-function">abs</span>(<span class="code-function">calculate_cost</span>(best_tour, cities, weight_type) - best_cost) &lt; <span class="code-number">1e-6</span></span>
+<span class="code-line">    <span class="code-keyword">assert</span> <span class="code-function">sorted</span>(best_tour) == <span class="code-function">list</span>(<span class="code-function">range</span>(<span class="code-function">len</span>(cities))), <span class="code-string">"Invalid tour!"</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A note to the reader: we measure the winning route a second time.</p>
+              <p class="tl">The fresh measurement must match the length the algorithm reported. If not, stop.</p>
+              <p class="tl">Put the route's cities in order. They must be exactly 0, 1, 2 … 51, with none missing and none repeated. If not, stop and say "Invalid tour!"</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🛡️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Ask for this by name</strong>
+            <p>A cheap check on the final answer catches a whole family of silent mistakes. When you direct an AI tool, you can say: "add a sanity check that validates the output before printing it."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right. A heuristic trades the guarantee of perfection for speed, and the gap tells you how much you gave up."
+               data-explanation-wrong="Not quite. Nothing is broken here: this kind of program never promises the perfect route, only a good one. The gap is how you judge it.">
+            <h3 class="quiz-question">A run on berlin52 finishes with a route of length 7727, a gap of about 2.5%. A teammate says the program is broken because it did not print 7542. What is the best reply?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>They are right. Any correct solver always prints 7542.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It is working as designed. It searches for a good route, and 2.5% away from perfect is a result to compare, not an error.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The map file must be damaged.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. A route shorter than the proven minimum is impossible, so the measuring or the route itself must be wrong. This is the case the two assert lines guard against."
+               data-explanation-wrong="Think again. 7542 is proven to be the shortest possible. Anything shorter means a city was skipped or the length was measured wrongly.">
+            <h3 class="quiz-question">After you ask an AI tool to "speed up the code", a berlin52 run prints a length of 7400. What should you suspect first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The AI made the algorithm smarter and it beat the world record.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The run needs more generations.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bug: the route skips or repeats a city, or the length is calculated incorrectly.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Yes. The algorithm works on any list of coordinates, so only the choice of map changes. Whether it does well on a bigger map is a separate question."
+               data-explanation-wrong="Not quite. Nothing in the algorithm is tied to 52 cities. It receives whatever list of coordinates the map file contains.">
+            <h3 class="quiz-question">You want to try the program on a 200-city map that is already in the data folder. What needs to change?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only which map you ask for on the command line.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The algorithm has to be rewritten for 200 cities.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The plotting code, because a bigger map needs a different chart.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
