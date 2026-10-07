@@ -1,0 +1,7 @@
+SWEEP SUMMARY: best trial per init
+dataset,init,best_cost
+berlin52,random,7727.00
+berlin52,nn,7542.00
+berlin52,angle,7685.00
+berlin52,smart,7542.00
+

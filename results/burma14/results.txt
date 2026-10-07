@@ -1,0 +1,7 @@
+SWEEP SUMMARY: best trial per init
+dataset,init,best_cost
+burma14,random,3323.00
+burma14,nn,3323.00
+burma14,angle,3323.00
+burma14,smart,3323.00
+

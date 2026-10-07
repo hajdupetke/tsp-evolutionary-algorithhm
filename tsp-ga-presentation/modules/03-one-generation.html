@@ -1,0 +1,336 @@
+<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">One generation, up close</h1>
+      <p class="module-subtitle">Select, mix, tweak. The three moves that repeat 500 times, and the three settings that control them.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A gardener saving seeds</h2>
+        <p>A gardener who wants sweeter tomatoes keeps some of this year's plants, crosses the best ones to get seedlings, and accepts that a few seedlings will turn out odd. Next year they do it again. One round of that is a <span class="term" data-definition="One full round of the algorithm: build a new group of routes from the current group. The default run does 500 of them.">generation</span>, and the whole crowd of 100 routes is the <span class="term" data-definition="The group of candidate answers the algorithm is working with at one moment. Here it is 100 routes.">population</span>.</p>
+
+        <div style="display:flex; border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-sm); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm); color:#fff;">
+          <div style="flex:30; background: var(--color-actor-5); padding: var(--space-4); text-align:center;">30 kept</div>
+          <div style="flex:70; background: var(--color-actor-2); padding: var(--space-4); text-align:center;">70 children (35 pairs of parents, 2 children each)</div>
+        </div>
+
+        <p>That split comes from one setting, the <span class="term" data-definition="The share of the population that gets replaced by children each generation. At 0.7, seventy percent are new children and thirty percent are carried over.">replacement rate</span>, which defaults to 0.7. This is the arithmetic in <code>ga.py</code>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    num_pairs = <span class="code-function">round</span>(r * p / <span class="code-number">2</span>)</span>
+<span class="code-line">    num_children = <span class="code-number">2</span> * num_pairs</span>
+<span class="code-line">    keep_n = p - num_children</span>
+
+<span class="code-line">    <span class="code-keyword">assert</span> keep_n &gt;= <span class="code-number">0</span></span>
+
+<span class="code-line">    <span class="code-keyword">return</span> keep_n, num_pairs</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">How many pairs of parents do we need? Take the replacement share of the population and halve it. With 0.7 and 100 that is 35.</p>
+              <p class="tl">Each pair makes two children, so 70 children.</p>
+              <p class="tl">Whatever is left over is carried into the next generation: 30.</p>
+              <p class="tl">Safety check: that leftover number can never be negative.</p>
+              <p class="tl">Hand both numbers back to whoever asked.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 1: pick a parent with a mini-contest</h2>
+        <p>To choose a parent, the program draws five routes at random and takes the shortest of the five. This is called <span class="term" data-definition="A way of choosing a parent: pick a few candidates at random and take the best of that small group. The group size is called k.">tournament selection</span>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Pick k random indices</span></span>
+<span class="code-line">    indices = [rng.<span class="code-function">randrange</span>(<span class="code-function">len</span>(costs)) <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(k)]</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Return the index with the lowest cost</span></span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">min</span>(indices, key=<span class="code-keyword">lambda</span> i: costs[i])</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A note: choose k contestants.</p>
+              <p class="tl">Draw k random position numbers from the population. With the default settings, k is 5.</p>
+              <p class="tl">A note: the shortest route wins.</p>
+              <p class="tl">Of those contestants, hand back the position of the one whose route is shortest.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Selection pressure</strong>
+            <p>The contest size is a dial. A bigger contest means the very best routes win almost every time, so the crowd improves fast but soon all looks alike. A smaller contest gives weaker routes a chance and keeps variety alive. Engineers call this dial "selection pressure".</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 2: mix two routes without breaking them</h2>
+        <p>A route must contain every city exactly once. Gluing half of one route to half of another would repeat some cities and drop others. The mixing method here, <span class="term" data-definition="Order Crossover, or OX. Copy a stretch of one parent into the child, then fill the empty places with the other parent's cities in the order they appear, skipping any already used.">order crossover</span>, avoids that.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-6); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm);">
+          <div style="display:flex; align-items:center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap:wrap;">
+            <span style="width:5.5em; color: var(--color-text-secondary);">Parent A</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">0</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">4</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">7</span>
+          </div>
+          <div style="display:flex; align-items:center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap:wrap;">
+            <span style="width:5.5em; color: var(--color-text-secondary);">Parent B</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">7</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">0</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">4</span>
+          </div>
+          <div style="display:flex; align-items:center; gap: var(--space-2); flex-wrap:wrap; padding-top: var(--space-3); border-top: 1px dashed var(--color-border);">
+            <span style="width:5.5em; font-weight:600;">Child</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">4</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">7</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">0</span>
+          </div>
+          <p style="margin: var(--space-4) 0 0; font-family: var(--font-body); color: var(--color-text-secondary);">The teal stretch (2, 3, 4) is copied straight from Parent A. Parent B then supplies the rest in its own order, starting after the stretch and wrapping around: 6, 7, 0, 5, 1. Cities already used are skipped.</p>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    child = [<span class="code-keyword">None</span>] * n</span>
+<span class="code-line">    child[cut1:cut2+<span class="code-number">1</span>] = p1[cut1:cut2+<span class="code-number">1</span>]</span>
+<span class="code-line">    </span>
+<span class="code-line">    used= <span class="code-function">set</span>(child[cut1:cut2+<span class="code-number">1</span>])</span>
+<span class="code-line">    </span>
+<span class="code-line">    fill=[]</span>
+<span class="code-line">    <span class="code-keyword">for</span> city <span class="code-keyword">in</span> p2[cut2+<span class="code-number">1</span>:] + p2[:cut2+<span class="code-number">1</span>]:</span>
+<span class="code-line">        <span class="code-keyword">if</span> city <span class="code-keyword">not in</span> used:</span>
+<span class="code-line">            fill.<span class="code-function">append</span>(city)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start the child as a row of empty slots, one per city.</p>
+              <p class="tl">Copy the stretch between the two cut points from the first parent into the same slots.</p>
+              <p class="tl">Remember which cities are now taken.</p>
+              <p class="tl">Start an empty waiting list.</p>
+              <p class="tl">Walk through the second parent, beginning just after the stretch and wrapping around to the front.</p>
+              <p class="tl">If a city is not already taken…</p>
+              <p class="tl">…add it to the waiting list. The list then fills the empty slots in order.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 3: a small random tweak</h2>
+        <p>Mixing only reshuffles what the crowd already has. A <span class="term" data-definition="A small random change to one candidate. It is how the algorithm tries something that no current route contains.">mutation</span> introduces something new. The project has two kinds, and a setting chooses between them.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🔀</div>
+            <h4 class="pattern-title">Swap</h4>
+            <p class="pattern-desc">Two cities trade places.<br><code>0 1 <strong>2</strong> 3 4 <strong>5</strong> 6 7</code><br><code>0 1 <strong>5</strong> 3 4 <strong>2</strong> 6 7</code><br>Up to four roads in the route change.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">↩️</div>
+            <h4 class="pattern-title">Inversion</h4>
+            <p class="pattern-desc">A stretch is driven in reverse.<br><code>0 1 <strong>2 3 4 5</strong> 6 7</code><br><code>0 1 <strong>5 4 3 2</strong> 6 7</code><br>Only two roads change, so it is gentler.</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Copy the tour</span></span>
+<span class="code-line">    new_tour = tour.<span class="code-function">copy</span>()</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Pick two random positions</span></span>
+<span class="code-line">    i, j = <span class="code-function">sorted</span>(rng.<span class="code-function">sample</span>(<span class="code-function">range</span>(<span class="code-function">len</span>(tour)), <span class="code-number">2</span>))</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Reverse the part between them</span></span>
+<span class="code-line">    new_tour[i:j+<span class="code-number">1</span>] = <span class="code-function">reversed</span>(new_tour[i:j+<span class="code-number">1</span>])</span>
+
+<span class="code-line">    <span class="code-comment"># Return the copy</span></span>
+<span class="code-line">    <span class="code-keyword">return</span> new_tour</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Work on a copy, so the original route is left untouched.</p>
+              <p class="tl">Choose two different positions at random and put the smaller one first.</p>
+              <p class="tl">Flip the order of everything between those two positions.</p>
+              <p class="tl">Hand back the changed copy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">📝</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why the default is inversion</strong>
+            <p>The settings table in experiments.py chooses inversion, and a note beside it records why: on berlin52 with random starting routes, inversion finished about 8.4% from the best possible route against about 24.8% for swap.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The three moves, assembled</h2>
+        <p>This is the heart of <code>ga.py</code>, the part that runs once per generation. A <span class="term" data-definition="A block of instructions that repeats. 'for _ in range(30)' means 'do the following 30 times'.">loop</span> appears three times: once to keep, once to breed, once to tweak.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-comment"># Survivors: keep_n = (1-r)p picked by tournament selection</span></span>
+<span class="code-line">        new_population = []</span>
+<span class="code-line">        <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(keep_n):</span>
+<span class="code-line">            i = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+<span class="code-line">            new_population.<span class="code-function">append</span>(population[i][:])</span>
+
+<span class="code-line">        <span class="code-comment"># Create children using crossover</span></span>
+<span class="code-line">        <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(num_pairs):</span>
+<span class="code-line">            i = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+<span class="code-line">            j = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+
+<span class="code-line">            child1 = <span class="code-function">order_crossover</span>(population[i], population[j], rng)</span>
+<span class="code-line">            child2 = <span class="code-function">order_crossover</span>(population[j], population[i], rng)</span>
+
+<span class="code-line">            new_population.<span class="code-function">append</span>(child1)</span>
+<span class="code-line">            new_population.<span class="code-function">append</span>(child2)</span>
+
+<span class="code-line">        <span class="code-comment"># Mutate a fixed number of individuals</span></span>
+<span class="code-line">        positions = rng.<span class="code-function">sample</span>(<span class="code-function">range</span>(p), num_mutants)</span>
+
+<span class="code-line">        <span class="code-keyword">for</span> i <span class="code-keyword">in</span> positions:</span>
+<span class="code-line">            new_population[i] = <span class="code-function">mutation_fn</span>(new_population[i], rng)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start next year's crowd as an empty list.</p>
+              <p class="tl">30 times: hold a mini-contest and carry a copy of the winner forward. The same strong route can win more than once.</p>
+              <p class="tl">35 times: hold two mini-contests to find two parents.</p>
+              <p class="tl">Mix them twice, swapping which parent donates the copied stretch, to get two different children.</p>
+              <p class="tl">Add both children to next year's crowd.</p>
+              <p class="tl">Choose 10 positions at random out of the 100. That is the mutation rate of 0.1.</p>
+              <p class="tl">Replace each chosen route with a tweaked copy of itself. Any route can be chosen, including the best one.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three dials to steer with</h2>
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">k = 5</code>
+            <span class="badge-desc">Contest size. Higher favours the best routes more strongly.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">r = 0.7</code>
+            <span class="badge-desc">Replacement rate. Higher means more children and fewer routes carried over.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">m = 0.1</code>
+            <span class="badge-desc">Mutation rate. Higher means more random tweaks per generation.</span>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module3" style="margin-top: var(--space-8)">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Yes. When everyone is alike, mixing produces more of the same. More random tweaks, or a smaller contest, bring variety back."
+               data-explanation-wrong="Not quite. If all routes are nearly identical, more rounds of mixing identical routes will not help. The crowd needs fresh variety.">
+            <h3 class="quiz-question">After 100 generations all 100 routes are almost identical and the result has stopped improving at a 12% gap. What is the most sensible first experiment?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Run more generations with the same settings.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Raise the mutation rate or lower the contest size, to restore variety.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Raise the contest size so the best route wins more often.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. The second half would repeat cities from the first half and leave others out. The result is no longer a valid route, which is the problem order crossover exists to prevent."
+               data-explanation-wrong="Think about what a route must contain. If the first half of A includes city 7 and the second half of B also includes city 7, what happens?">
+            <h3 class="quiz-question">An AI tool proposes a "simpler" way to mix: take the first half of Parent A and glue on the second half of Parent B. What is wrong with it?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing. Simpler code is always better.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It would run too slowly.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The child could visit some cities twice and miss others entirely.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right. With a rate of 1.0 the arithmetic gives 50 pairs, 100 children and zero routes kept. Nothing is carried over, so the current best can disappear from the crowd."
+               data-explanation-wrong="Work through the arithmetic from the first screen: 1.0 times 100, halved, is 50 pairs, which makes 100 children. How many are left to keep?">
+            <h3 class="quiz-question">You set the replacement rate to 1.0 with a population of 100. What happens each generation?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All 100 routes are replaced by children. No route is carried over.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The program stops with an error because the number kept is negative.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The population doubles to 200.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
