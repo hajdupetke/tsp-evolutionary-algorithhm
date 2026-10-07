@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evolving the Shortest Route</title>
+
+  <!-- Google Fonts: Bricolage Grotesque · DM Sans · JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!--
+    CUSTOMIZE PER COURSE — change only the three accent variables below.
+    Options:
+      vermillion  #D94F30 / #C4432A / #FDEEE9 / #E8836C  (default)
+      coral       #E06B56 / #C85A47 / #FDECEA / #E89585
+      teal        #2A7B9B / #1F6280 / #E4F2F7 / #5A9DB8
+      amber       #D4A843 / #BF9530 / #FDF5E0 / #E0C070
+      forest      #2D8B55 / #226B41 / #E8F5EE / #5AAD7A
+  -->
+  <style>
+    :root {
+      --color-accent:       #2A7B9B;
+      --color-accent-hover: #1F6280;
+      --color-accent-light: #E4F2F7;
+      --color-accent-muted: #5A9DB8;
+    }
+  </style>
+
+  <script src="main.js" defer></script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="nav-inner">
+      <span class="nav-title">Evolving the Shortest Route</span>
+      <div class="nav-dots" id="nav-dots" role="tablist">
+        <!--
+          One <button> per module. Replace MODULE_N_NAME with the actual module title.
+
+          <button class="nav-dot" data-target="module-1" data-tooltip="MODULE_1_NAME" role="tab" aria-label="Module 1: MODULE_1_NAME"></button>
+          <button class="nav-dot" data-target="module-2" data-tooltip="MODULE_2_NAME" role="tab" aria-label="Module 2: MODULE_2_NAME"></button>
+          ...
+        -->
+        <button class="nav-dot" data-target="module-1" data-tooltip="The puzzle and the run" role="tab" aria-label="Module 1: The puzzle and the run"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="Meet the cast" role="tab" aria-label="Module 2: Meet the cast"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="One generation, up close" role="tab" aria-label="Module 3: One generation, up close"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="A head start" role="tab" aria-label="Module 4: A head start"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="Can you trust the numbers?" role="tab" aria-label="Module 5: Can you trust the numbers?"></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <!-- modules/*.html content is assembled here by build.sh -->
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">The puzzle and the run</h1>
+      <p class="module-subtitle">What this project solves, and what happens in the seconds after you press Enter.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A delivery driver with 52 stops</h2>
+        <p>Picture a courier in Berlin with 52 parcels. They must visit every address once and end up back at the depot, driving as little as possible. That is the <span class="term" data-definition="A famous puzzle: find the shortest round trip that visits every city exactly once. Usually shortened to TSP.">Travelling Salesman Problem</span>, and this project is a program that tackles it.</p>
+
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">📍</div>
+            <h4 class="pattern-title">52 cities</h4>
+            <p class="pattern-desc">The main test map is called berlin52. Each city is just a pair of x and y coordinates in a text file.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">♾️</div>
+            <h4 class="pattern-title">About 7.8 × 10<sup>65</sup> routes</h4>
+            <p class="pattern-desc">That is how many different round trips exist for 52 cities. No computer can check them all.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🏁</div>
+            <h4 class="pattern-title">7542</h4>
+            <p class="pattern-desc">The shortest possible berlin52 route, proven by researchers. It is the target every run is measured against.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The trick: breed routes instead of checking them</h2>
+        <p>Since checking every route is impossible, the program borrows an idea from nature. It keeps a crowd of candidate routes and lets the good ones have "children". This approach is called a <span class="term" data-definition="A search method that imitates evolution: keep a group of candidate answers, let the better ones combine and change slightly, and repeat. Often shortened to GA.">genetic algorithm</span>.</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>Make 100 routes</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>Measure each one</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>Mix the short ones</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>Tweak a few at random</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <p>Repeat 500 times</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Good enough, fast</strong>
+            <p>A method that finds a very good answer quickly, without promising the perfect one, is called a heuristic. Much real software works this way, from map directions to delivery scheduling. When you ask an AI tool for an "optimal" solution to a huge problem, a heuristic is usually what you should expect back.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Follow one run from start to finish</h2>
+        <p>You type one line into the <span class="term" data-definition="The text window where you type commands for your computer instead of clicking buttons.">terminal</span>: <code>python main.py --skip-experiments</code>. Step through what happens next.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"You type: python main.py --skip-experiments"},
+          {"highlight":"flow-actor-2","label":"main.py reads your options. With none given it uses seed 42, 100 routes, 500 generations.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"main.py asks utils.py to open the map file data/berlin52.tsp","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-2","label":"utils.py hands back 52 coordinate pairs and the distance rule this map uses","packet":true,"from":"actor-3","to":"actor-2"},
+          {"highlight":"flow-actor-4","label":"main.py passes the cities, the settings and the seed to the genetic algorithm in ga.py","packet":true,"from":"actor-2","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"ga.py breeds 500 generations of 100 routes. That is about 50,000 route measurements."},
+          {"highlight":"flow-actor-2","label":"ga.py returns the best route it ever saw, its length, and the progress history","packet":true,"from":"actor-4","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"main.py re-measures that route itself, checks every city appears once, then prints the gap"},
+          {"highlight":"flow-actor-5","label":"main.py sends the history and the route to plot.py","packet":true,"from":"actor-2","to":"actor-5"},
+          {"highlight":"flow-actor-1","label":"Two pictures land in the results folder: a progress curve and a map of the route","packet":true,"from":"actor-5","to":"actor-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🧑</div>
+              <span>You</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🚪</div>
+              <span>main.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">📏</div>
+              <span>utils.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🧬</div>
+              <span>ga.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-5">
+              <div class="flow-actor-icon">📈</div>
+              <span>plot.py</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="flow-packet"></div>
+
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to begin</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The scoreboard, in code</h2>
+        <p>Here are the lines in <code>main.py</code> that print the result. The key number is the <span class="term" data-definition="How far the answer is from the best possible one, as a percentage. A gap of 0% means the program found the perfect route.">gap</span>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    optimal = KNOWN_OPTIMALS[args.dataset]</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"\nResult:        {best_cost:.4f}"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Known optimal: {optimal:.4f}"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Gap:           {(best_cost - optimal) / optimal * 100:.4f}%"</span>, flush=<span class="code-keyword">True</span>)</span>
+<span class="code-line">    <span class="code-function">print</span>(<span class="code-string">f"Time:          {res['seconds']:.2f}s"</span>, flush=<span class="code-keyword">True</span>)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Look up the proven shortest length for the chosen map in a small table.</p>
+              <p class="tl">Show the length of the best route we found.</p>
+              <p class="tl">Show the proven best next to it.</p>
+              <p class="tl">Show how much longer ours is, as a percentage of the proven best.</p>
+              <p class="tl">Show how long the run took.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Just before printing, <code>main.py</code> refuses to trust the answer blindly. These two <span class="term" data-definition="A line that says 'this must be true'. If it is not, the program stops immediately with an error instead of carrying on with bad data.">assert</span> lines are a self-check.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Sanity check: recompute cost independently (same TSPLIB metric)</span></span>
+<span class="code-line">    <span class="code-keyword">assert</span> <span class="code-function">abs</span>(<span class="code-function">calculate_cost</span>(best_tour, cities, weight_type) - best_cost) &lt; <span class="code-number">1e-6</span></span>
+<span class="code-line">    <span class="code-keyword">assert</span> <span class="code-function">sorted</span>(best_tour) == <span class="code-function">list</span>(<span class="code-function">range</span>(<span class="code-function">len</span>(cities))), <span class="code-string">"Invalid tour!"</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A note to the reader: we measure the winning route a second time.</p>
+              <p class="tl">The fresh measurement must match the length the algorithm reported. If not, stop.</p>
+              <p class="tl">Put the route's cities in order. They must be exactly 0, 1, 2 … 51, with none missing and none repeated. If not, stop and say "Invalid tour!"</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🛡️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Ask for this by name</strong>
+            <p>A cheap check on the final answer catches a whole family of silent mistakes. When you direct an AI tool, you can say: "add a sanity check that validates the output before printing it."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right. A heuristic trades the guarantee of perfection for speed, and the gap tells you how much you gave up."
+               data-explanation-wrong="Not quite. Nothing is broken here: this kind of program never promises the perfect route, only a good one. The gap is how you judge it.">
+            <h3 class="quiz-question">A run on berlin52 finishes with a route of length 7727, a gap of about 2.5%. A teammate says the program is broken because it did not print 7542. What is the best reply?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>They are right. Any correct solver always prints 7542.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It is working as designed. It searches for a good route, and 2.5% away from perfect is a result to compare, not an error.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The map file must be damaged.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. A route shorter than the proven minimum is impossible, so the measuring or the route itself must be wrong. This is the case the two assert lines guard against."
+               data-explanation-wrong="Think again. 7542 is proven to be the shortest possible. Anything shorter means a city was skipped or the length was measured wrongly.">
+            <h3 class="quiz-question">After you ask an AI tool to "speed up the code", a berlin52 run prints a length of 7400. What should you suspect first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The AI made the algorithm smarter and it beat the world record.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The run needs more generations.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A bug: the route skips or repeats a city, or the length is calculated incorrectly.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Yes. The algorithm works on any list of coordinates, so only the choice of map changes. Whether it does well on a bigger map is a separate question."
+               data-explanation-wrong="Not quite. Nothing in the algorithm is tied to 52 cities. It receives whatever list of coordinates the map file contains.">
+            <h3 class="quiz-question">You want to try the program on a 200-city map that is already in the data folder. What needs to change?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only which map you ask for on the command line.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The algorithm has to be rewritten for 200 cities.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The plotting code, because a bigger map needs a different chart.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">Meet the cast</h1>
+      <p class="module-subtitle">Seven small files, each with one job. Knowing who does what lets you tell an AI tool exactly where a change belongs.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A small research lab</h2>
+        <p>Think of the project as a lab with a front desk, a surveyor, a breeder and an illustrator. Nobody does anyone else's job. Each <span class="term" data-definition="One file of code with a focused purpose. Other files can borrow its tools by importing them.">module</span> below is one of those people.</p>
+
+        <div class="file-tree">
+          <div class="ft-file">
+            <span class="ft-name">main.py</span>
+            <span class="ft-desc">The front desk. Reads your command and starts everything.</span>
+          </div>
+          <div class="ft-folder open">
+            <span class="ft-name">src/</span>
+            <span class="ft-desc">The lab itself</span>
+            <div class="ft-children">
+              <div class="ft-file">
+                <span class="ft-name">utils.py</span>
+                <span class="ft-desc">The surveyor. Reads map files and measures distances.</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">initialization.py</span>
+                <span class="ft-desc">The scout. Builds the first 100 routes.</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">operators.py</span>
+                <span class="ft-desc">The toolkit. Pick a parent, mix two routes, tweak a route.</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">ga.py</span>
+                <span class="ft-desc">The breeder. Runs the generation-after-generation loop.</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">experiments.py</span>
+                <span class="ft-desc">The lab manager. Repeats runs with different settings and writes the results down.</span>
+              </div>
+              <div class="ft-file">
+                <span class="ft-name">plot.py</span>
+                <span class="ft-desc">The illustrator. Turns numbers into charts.</span>
+              </div>
+            </div>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">data/</span>
+            <span class="ft-desc">Map files, one per set of cities</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">results/</span>
+            <span class="ft-desc">Charts and result tables the program produces</span>
+          </div>
+          <div class="ft-folder">
+            <span class="ft-name">tests/</span>
+            <span class="ft-desc">Small programs that check the other code still behaves</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Listen in on one run</h2>
+        <p>If the files could message each other, a single run would sound like this.</p>
+
+        <div class="chat-window" id="chat-module2">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="main" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">M</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">main.py</span>
+                <p>The user wants berlin52, seed 42. Surveyor, can you load the map?</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="utils" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">U</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">utils.py</span>
+                <p>Done. 52 cities. The file says to measure straight-line distance, rounded to whole numbers.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="main" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">M</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">main.py</span>
+                <p>Lab manager, please run one trial with these cities and these settings.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="experiments" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">E</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">experiments.py</span>
+                <p>On it. Breeder, here are the cities, a random-number source set to seed 42, a way to make starting routes, and a way to measure a route.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="4" data-sender="ga" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">G</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">ga.py</span>
+                <p>Scout, I need 100 starting routes.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="5" data-sender="init" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">I</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">initialization.py</span>
+                <p>Here are 100 random shuffles of the 52 cities. They are terrible routes, but they are all different.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="6" data-sender="ga" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">G</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">ga.py</span>
+                <p>Toolkit, I will be calling you a lot. Pick me a parent. Now another. Mix them. Tweak this one.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="7" data-sender="operators" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">O</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">operators.py</span>
+                <p>Here you go, every time. I do not remember anything between calls. Give me routes and I give routes back.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="8" data-sender="ga" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">G</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">ga.py</span>
+                <p>500 generations done. Best route ever seen, its length, and the history of progress are attached.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="9" data-sender="main" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">M</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">main.py</span>
+                <p>Thanks. Illustrator, please draw the progress curve and the route map.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="10" data-sender="plot" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">P</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">plot.py</span>
+                <p>Saved two pictures into the results folder.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">How one file borrows from another</h2>
+        <p>The very top of <code>ga.py</code> shows who the breeder relies on. An <span class="term" data-definition="A line at the top of a file that says 'I want to use these tools from that other file'. Reading the imports is the fastest way to see what a file depends on.">import</span> is a file reaching into another file's toolbox.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line"><span class="code-keyword">from</span> src.operators <span class="code-keyword">import</span> (</span>
+<span class="code-line">    tournament_selection,</span>
+<span class="code-line">    order_crossover,</span>
+<span class="code-line">    swap_mutation,</span>
+<span class="code-line">    inversion_mutation,</span>
+<span class="code-line">)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">From the toolkit file, bring in four tools:</p>
+              <p class="tl">the one that picks a parent,</p>
+              <p class="tl">the one that mixes two routes into a child,</p>
+              <p class="tl">a tweak that swaps two cities,</p>
+              <p class="tl">and a tweak that reverses a stretch of the route.</p>
+              <p class="tl">That is the complete list. The breeder imports nothing about files, maps or charts.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Separation of concerns</strong>
+            <p>Engineers call this "separation of concerns": each file knows about one thing. The benefit is practical. A change to the charts cannot break the algorithm, because the algorithm never touches the chart code.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One small tool, read line by line</h2>
+        <p>Maps come with different rules for measuring distance. This short <span class="term" data-definition="A named, reusable set of instructions. You give it inputs, it does its job and hands back a result.">function</span> in <code>utils.py</code> picks the right rule. A function that only decides who should handle a job is called a <span class="term" data-definition="A piece of code whose only job is to route a request to the right specialist, like a receptionist forwarding a call.">dispatcher</span>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line"><span class="code-keyword">def</span> <span class="code-function">pairwise</span>(city1, city2, weight_type=<span class="code-string">"EUC_2D"</span>):</span>
+<span class="code-line">    <span class="code-string">"""Dispatch to the TSPLIB edge-weight function for weight_type."""</span></span>
+<span class="code-line">    <span class="code-keyword">if</span> weight_type == <span class="code-string">"GEO"</span>:</span>
+<span class="code-line">        <span class="code-keyword">return</span> <span class="code-function">geo_distance</span>(city1, city2)</span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">euc2d_rounded</span>(city1, city2)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A tool named "pairwise". Give it two cities and the map's distance rule. If you do not say which rule, assume flat straight-line distance.</p>
+              <p class="tl">A one-line description for human readers.</p>
+              <p class="tl">If the map uses real latitude and longitude…</p>
+              <p class="tl">…measure along the curve of the Earth.</p>
+              <p class="tl">Otherwise measure a straight line and round it to a whole number.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">EUC_2D</code>
+            <span class="badge-desc">Flat map, straight-line distance. Used by berlin52, kroA100 and kroA200.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">GEO</code>
+            <span class="badge-desc">Globe coordinates, distance along the Earth's surface. Used by burma14.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Where would you put it?</h2>
+
+        <div class="quiz-container" id="quiz-module2">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Yes. Distance rules live with the surveyor, and the dispatcher is the one place that chooses between them. Nothing else needs to know a new rule exists."
+               data-explanation-wrong="Not quite. Ask who measures distance. Only the surveyor does, so a new way of measuring belongs there, behind the dispatcher.">
+            <h3 class="quiz-question">You get a map of a city laid out as a grid, where distance means blocks walked rather than a straight line. Where should the new measuring rule go?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Inside the generation loop in ga.py, since that is where routes get measured most often.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>In utils.py, as a new distance function that the dispatcher can choose.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>In main.py, so it is easy to find.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Exactly. The numbers are right, so the algorithm and the lab manager did their jobs. Only the illustrator needs attention."
+               data-explanation-wrong="Look at the clue: the numbers in the results file are correct. That clears everyone except the file that draws.">
+            <h3 class="quiz-question">A chart shows the wrong axis label, but the numbers in the results file are correct. You are about to ask an AI tool for a fix. What do you tell it?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Fix the label in plot.py only. Do not touch the algorithm."</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Something is wrong with the results, please review the whole project."</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Rewrite ga.py so it reports better numbers."</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Right. The new mixing tool joins the other tools, and the breeder gets a setting to choose it, the same way it already chooses between two tweaks."
+               data-explanation-wrong="Close, but think about both halves. The tool itself belongs in the toolkit, and the breeder needs a way to pick it without being rewritten.">
+            <h3 class="quiz-question">You want to try a different way of mixing two parent routes, while keeping the old one available for comparison. What is the cleanest plan?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Replace the existing mixing code in place.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Copy the whole of ga.py into a second file and edit the copy.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Add the new tool to operators.py and add a setting that lets ga.py choose which one to use.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">One generation, up close</h1>
+      <p class="module-subtitle">Select, mix, tweak. The three moves that repeat 500 times, and the three settings that control them.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A gardener saving seeds</h2>
+        <p>A gardener who wants sweeter tomatoes keeps some of this year's plants, crosses the best ones to get seedlings, and accepts that a few seedlings will turn out odd. Next year they do it again. One round of that is a <span class="term" data-definition="One full round of the algorithm: build a new group of routes from the current group. The default run does 500 of them.">generation</span>, and the whole crowd of 100 routes is the <span class="term" data-definition="The group of candidate answers the algorithm is working with at one moment. Here it is 100 routes.">population</span>.</p>
+
+        <div style="display:flex; border-radius: var(--radius-md); overflow:hidden; box-shadow: var(--shadow-sm); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm); color:#fff;">
+          <div style="flex:30; background: var(--color-actor-5); padding: var(--space-4); text-align:center;">30 kept</div>
+          <div style="flex:70; background: var(--color-actor-2); padding: var(--space-4); text-align:center;">70 children (35 pairs of parents, 2 children each)</div>
+        </div>
+
+        <p>That split comes from one setting, the <span class="term" data-definition="The share of the population that gets replaced by children each generation. At 0.7, seventy percent are new children and thirty percent are carried over.">replacement rate</span>, which defaults to 0.7. This is the arithmetic in <code>ga.py</code>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    num_pairs = <span class="code-function">round</span>(r * p / <span class="code-number">2</span>)</span>
+<span class="code-line">    num_children = <span class="code-number">2</span> * num_pairs</span>
+<span class="code-line">    keep_n = p - num_children</span>
+
+<span class="code-line">    <span class="code-keyword">assert</span> keep_n &gt;= <span class="code-number">0</span></span>
+
+<span class="code-line">    <span class="code-keyword">return</span> keep_n, num_pairs</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">How many pairs of parents do we need? Take the replacement share of the population and halve it. With 0.7 and 100 that is 35.</p>
+              <p class="tl">Each pair makes two children, so 70 children.</p>
+              <p class="tl">Whatever is left over is carried into the next generation: 30.</p>
+              <p class="tl">Safety check: that leftover number can never be negative.</p>
+              <p class="tl">Hand both numbers back to whoever asked.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 1: pick a parent with a mini-contest</h2>
+        <p>To choose a parent, the program draws five routes at random and takes the shortest of the five. This is called <span class="term" data-definition="A way of choosing a parent: pick a few candidates at random and take the best of that small group. The group size is called k.">tournament selection</span>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Pick k random indices</span></span>
+<span class="code-line">    indices = [rng.<span class="code-function">randrange</span>(<span class="code-function">len</span>(costs)) <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(k)]</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Return the index with the lowest cost</span></span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">min</span>(indices, key=<span class="code-keyword">lambda</span> i: costs[i])</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">A note: choose k contestants.</p>
+              <p class="tl">Draw k random position numbers from the population. With the default settings, k is 5.</p>
+              <p class="tl">A note: the shortest route wins.</p>
+              <p class="tl">Of those contestants, hand back the position of the one whose route is shortest.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Selection pressure</strong>
+            <p>The contest size is a dial. A bigger contest means the very best routes win almost every time, so the crowd improves fast but soon all looks alike. A smaller contest gives weaker routes a chance and keeps variety alive. Engineers call this dial "selection pressure".</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 2: mix two routes without breaking them</h2>
+        <p>A route must contain every city exactly once. Gluing half of one route to half of another would repeat some cities and drop others. The mixing method here, <span class="term" data-definition="Order Crossover, or OX. Copy a stretch of one parent into the child, then fill the empty places with the other parent's cities in the order they appear, skipping any already used.">order crossover</span>, avoids that.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-6); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm);">
+          <div style="display:flex; align-items:center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap:wrap;">
+            <span style="width:5.5em; color: var(--color-text-secondary);">Parent A</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">0</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">4</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);">7</span>
+          </div>
+          <div style="display:flex; align-items:center; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap:wrap;">
+            <span style="width:5.5em; color: var(--color-text-secondary);">Parent B</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">7</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">0</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-border-light);text-decoration:line-through;color:var(--color-text-muted);">4</span>
+          </div>
+          <div style="display:flex; align-items:center; gap: var(--space-2); flex-wrap:wrap; padding-top: var(--space-3); border-top: 1px dashed var(--color-border);">
+            <span style="width:5.5em; font-weight:600;">Child</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">5</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">1</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">2</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">3</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-2);color:#fff;">4</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">6</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">7</span>
+            <span style="display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-actor-4);color:#fff;">0</span>
+          </div>
+          <p style="margin: var(--space-4) 0 0; font-family: var(--font-body); color: var(--color-text-secondary);">The teal stretch (2, 3, 4) is copied straight from Parent A. Parent B then supplies the rest in its own order, starting after the stretch and wrapping around: 6, 7, 0, 5, 1. Cities already used are skipped.</p>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    child = [<span class="code-keyword">None</span>] * n</span>
+<span class="code-line">    child[cut1:cut2+<span class="code-number">1</span>] = p1[cut1:cut2+<span class="code-number">1</span>]</span>
+<span class="code-line">    </span>
+<span class="code-line">    used= <span class="code-function">set</span>(child[cut1:cut2+<span class="code-number">1</span>])</span>
+<span class="code-line">    </span>
+<span class="code-line">    fill=[]</span>
+<span class="code-line">    <span class="code-keyword">for</span> city <span class="code-keyword">in</span> p2[cut2+<span class="code-number">1</span>:] + p2[:cut2+<span class="code-number">1</span>]:</span>
+<span class="code-line">        <span class="code-keyword">if</span> city <span class="code-keyword">not in</span> used:</span>
+<span class="code-line">            fill.<span class="code-function">append</span>(city)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start the child as a row of empty slots, one per city.</p>
+              <p class="tl">Copy the stretch between the two cut points from the first parent into the same slots.</p>
+              <p class="tl">Remember which cities are now taken.</p>
+              <p class="tl">Start an empty waiting list.</p>
+              <p class="tl">Walk through the second parent, beginning just after the stretch and wrapping around to the front.</p>
+              <p class="tl">If a city is not already taken…</p>
+              <p class="tl">…add it to the waiting list. The list then fills the empty slots in order.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Move 3: a small random tweak</h2>
+        <p>Mixing only reshuffles what the crowd already has. A <span class="term" data-definition="A small random change to one candidate. It is how the algorithm tries something that no current route contains.">mutation</span> introduces something new. The project has two kinds, and a setting chooses between them.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🔀</div>
+            <h4 class="pattern-title">Swap</h4>
+            <p class="pattern-desc">Two cities trade places.<br><code>0 1 <strong>2</strong> 3 4 <strong>5</strong> 6 7</code><br><code>0 1 <strong>5</strong> 3 4 <strong>2</strong> 6 7</code><br>Up to four roads in the route change.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">↩️</div>
+            <h4 class="pattern-title">Inversion</h4>
+            <p class="pattern-desc">A stretch is driven in reverse.<br><code>0 1 <strong>2 3 4 5</strong> 6 7</code><br><code>0 1 <strong>5 4 3 2</strong> 6 7</code><br>Only two roads change, so it is gentler.</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-comment"># Copy the tour</span></span>
+<span class="code-line">    new_tour = tour.<span class="code-function">copy</span>()</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Pick two random positions</span></span>
+<span class="code-line">    i, j = <span class="code-function">sorted</span>(rng.<span class="code-function">sample</span>(<span class="code-function">range</span>(<span class="code-function">len</span>(tour)), <span class="code-number">2</span>))</span>
+<span class="code-line">    </span>
+<span class="code-line">    <span class="code-comment"># Reverse the part between them</span></span>
+<span class="code-line">    new_tour[i:j+<span class="code-number">1</span>] = <span class="code-function">reversed</span>(new_tour[i:j+<span class="code-number">1</span>])</span>
+
+<span class="code-line">    <span class="code-comment"># Return the copy</span></span>
+<span class="code-line">    <span class="code-keyword">return</span> new_tour</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Work on a copy, so the original route is left untouched.</p>
+              <p class="tl">Choose two different positions at random and put the smaller one first.</p>
+              <p class="tl">Flip the order of everything between those two positions.</p>
+              <p class="tl">Hand back the changed copy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">📝</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why the default is inversion</strong>
+            <p>The settings table in experiments.py chooses inversion, and a note beside it records why: on berlin52 with random starting routes, inversion finished about 8.4% from the best possible route against about 24.8% for swap.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The three moves, assembled</h2>
+        <p>This is the heart of <code>ga.py</code>, the part that runs once per generation. A <span class="term" data-definition="A block of instructions that repeats. 'for _ in range(30)' means 'do the following 30 times'.">loop</span> appears three times: once to keep, once to breed, once to tweak.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-comment"># Survivors: keep_n = (1-r)p picked by tournament selection</span></span>
+<span class="code-line">        new_population = []</span>
+<span class="code-line">        <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(keep_n):</span>
+<span class="code-line">            i = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+<span class="code-line">            new_population.<span class="code-function">append</span>(population[i][:])</span>
+
+<span class="code-line">        <span class="code-comment"># Create children using crossover</span></span>
+<span class="code-line">        <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(num_pairs):</span>
+<span class="code-line">            i = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+<span class="code-line">            j = <span class="code-function">tournament_selection</span>(costs, k, rng)</span>
+
+<span class="code-line">            child1 = <span class="code-function">order_crossover</span>(population[i], population[j], rng)</span>
+<span class="code-line">            child2 = <span class="code-function">order_crossover</span>(population[j], population[i], rng)</span>
+
+<span class="code-line">            new_population.<span class="code-function">append</span>(child1)</span>
+<span class="code-line">            new_population.<span class="code-function">append</span>(child2)</span>
+
+<span class="code-line">        <span class="code-comment"># Mutate a fixed number of individuals</span></span>
+<span class="code-line">        positions = rng.<span class="code-function">sample</span>(<span class="code-function">range</span>(p), num_mutants)</span>
+
+<span class="code-line">        <span class="code-keyword">for</span> i <span class="code-keyword">in</span> positions:</span>
+<span class="code-line">            new_population[i] = <span class="code-function">mutation_fn</span>(new_population[i], rng)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Start next year's crowd as an empty list.</p>
+              <p class="tl">30 times: hold a mini-contest and carry a copy of the winner forward. The same strong route can win more than once.</p>
+              <p class="tl">35 times: hold two mini-contests to find two parents.</p>
+              <p class="tl">Mix them twice, swapping which parent donates the copied stretch, to get two different children.</p>
+              <p class="tl">Add both children to next year's crowd.</p>
+              <p class="tl">Choose 10 positions at random out of the 100. That is the mutation rate of 0.1.</p>
+              <p class="tl">Replace each chosen route with a tweaked copy of itself. Any route can be chosen, including the best one.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three dials to steer with</h2>
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">k = 5</code>
+            <span class="badge-desc">Contest size. Higher favours the best routes more strongly.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">r = 0.7</code>
+            <span class="badge-desc">Replacement rate. Higher means more children and fewer routes carried over.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">m = 0.1</code>
+            <span class="badge-desc">Mutation rate. Higher means more random tweaks per generation.</span>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module3" style="margin-top: var(--space-8)">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Yes. When everyone is alike, mixing produces more of the same. More random tweaks, or a smaller contest, bring variety back."
+               data-explanation-wrong="Not quite. If all routes are nearly identical, more rounds of mixing identical routes will not help. The crowd needs fresh variety.">
+            <h3 class="quiz-question">After 100 generations all 100 routes are almost identical and the result has stopped improving at a 12% gap. What is the most sensible first experiment?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Run more generations with the same settings.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Raise the mutation rate or lower the contest size, to restore variety.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Raise the contest size so the best route wins more often.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. The second half would repeat cities from the first half and leave others out. The result is no longer a valid route, which is the problem order crossover exists to prevent."
+               data-explanation-wrong="Think about what a route must contain. If the first half of A includes city 7 and the second half of B also includes city 7, what happens?">
+            <h3 class="quiz-question">An AI tool proposes a "simpler" way to mix: take the first half of Parent A and glue on the second half of Parent B. What is wrong with it?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Nothing. Simpler code is always better.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It would run too slowly.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The child could visit some cities twice and miss others entirely.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right. With a rate of 1.0 the arithmetic gives 50 pairs, 100 children and zero routes kept. Nothing is carried over, so the current best can disappear from the crowd."
+               data-explanation-wrong="Work through the arithmetic from the first screen: 1.0 times 100, halved, is 50 pairs, which makes 100 children. How many are left to keep?">
+            <h3 class="quiz-question">You set the replacement rate to 1.0 with a population of 100. What happens each generation?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>All 100 routes are replaced by children. No route is carried over.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The program stops with an error because the number kept is negative.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The population doubles to 200.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">A head start</h1>
+      <p class="module-subtitle">Where the first 100 routes come from, two speed tricks worth knowing by name, and a trap that hides your results.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Sea level or base camp?</h2>
+        <p>A climber can start at the coast or get a lift to base camp. Evolution works either way, but the starting point decides how much climbing is left. The scout file offers four starting points.</p>
+
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🎲</div>
+            <h4 class="pattern-title">random</h4>
+            <p class="pattern-desc">Shuffle the cities 100 times. Awful routes, maximum variety.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🧲</div>
+            <h4 class="pattern-title">nn</h4>
+            <p class="pattern-desc">Always drive to the closest unvisited city, then tidy up the route.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🧭</div>
+            <h4 class="pattern-title">angle</h4>
+            <p class="pattern-desc">Stand in the middle of the map and visit cities in the order a clock hand would sweep past them.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧠</div>
+            <h4 class="pattern-title">smart</h4>
+            <p class="pattern-desc">Half the crowd from nn, half from angle.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Nearest neighbour: always take the closest</h2>
+        <p>This is a <span class="term" data-definition="A method that always takes whatever looks best right now, without planning ahead. Fast and simple, but it can paint itself into a corner.">greedy</span> method. It never looks ahead, so the last few cities are often far apart.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-keyword">while</span> not_visited:</span>
+<span class="code-line">        current = tour[-<span class="code-number">1</span>]</span>
+<span class="code-line">        row = dist_matrix[current]</span>
+<span class="code-line">        nearest = <span class="code-function">min</span>(not_visited, key=<span class="code-keyword">lambda</span> city: row[city])</span>
+<span class="code-line">        tour.<span class="code-function">append</span>(nearest)</span>
+<span class="code-line">        not_visited.<span class="code-function">remove</span>(nearest)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Keep going while any city is still unvisited.</p>
+              <p class="tl">Where are we now? The last city on the route so far.</p>
+              <p class="tl">Open the distance table at the row for this city.</p>
+              <p class="tl">Among the unvisited cities, find the one with the smallest distance in that row.</p>
+              <p class="tl">Drive there: add it to the end of the route.</p>
+              <p class="tl">Cross it off the unvisited list.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Tidying up: uncross the roads</h2>
+        <p>If two legs of a route cross each other, there is always a shorter way to connect the same four cities. The tidy-up step, called <span class="term" data-definition="A way to improve a route: look for two road segments that would be shorter if reconnected the other way, reverse the stretch between them, and repeat until no such pair is left.">2-opt</span>, hunts for those and fixes them.</p>
+
+        <div style="display:flex; gap: var(--space-6); flex-wrap:wrap; justify-content:center; margin: var(--space-6) 0;">
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); text-align:center;">
+            <svg viewBox="0 0 180 130" width="220" role="img" aria-label="Two road segments crossing each other">
+              <line x1="20" y1="20" x2="160" y2="110" style="stroke: var(--color-error); stroke-width:3" />
+              <line x1="20" y1="110" x2="160" y2="20" style="stroke: var(--color-error); stroke-width:3" />
+              <circle cx="20" cy="20" r="7" style="fill: var(--color-text)" /><text x="32" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">a</text>
+              <circle cx="160" cy="110" r="7" style="fill: var(--color-text)" /><text x="140" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">b</text>
+              <circle cx="20" cy="110" r="7" style="fill: var(--color-text)" /><text x="32" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">c</text>
+              <circle cx="160" cy="20" r="7" style="fill: var(--color-text)" /><text x="140" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">d</text>
+            </svg>
+            <p style="margin:0; font-size: var(--text-sm); color: var(--color-text-secondary);">Before: a to b, and c to d</p>
+          </div>
+          <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); text-align:center;">
+            <svg viewBox="0 0 180 130" width="220" role="img" aria-label="The same four cities joined without crossing">
+              <line x1="20" y1="20" x2="20" y2="110" style="stroke: var(--color-success); stroke-width:3" />
+              <line x1="160" y1="110" x2="160" y2="20" style="stroke: var(--color-success); stroke-width:3" />
+              <circle cx="20" cy="20" r="7" style="fill: var(--color-text)" /><text x="32" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">a</text>
+              <circle cx="160" cy="110" r="7" style="fill: var(--color-text)" /><text x="140" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">b</text>
+              <circle cx="20" cy="110" r="7" style="fill: var(--color-text)" /><text x="32" y="124" style="font: 12px var(--font-mono); fill: var(--color-text)">c</text>
+              <circle cx="160" cy="20" r="7" style="fill: var(--color-text)" /><text x="140" y="16" style="font: 12px var(--font-mono); fill: var(--color-text)">d</text>
+            </svg>
+            <p style="margin:0; font-size: var(--text-sm); color: var(--color-text-secondary);">After: a to c, and b to d</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">            <span class="code-keyword">for</span> j <span class="code-keyword">in</span> <span class="code-function">range</span>(i + <span class="code-number">1</span>, n):</span>
+<span class="code-line">                c = tour[j]</span>
+<span class="code-line">                d = tour[(j + <span class="code-number">1</span>) % n]</span>
+<span class="code-line">                <span class="code-keyword">if</span> D[a][b] + D[c][d] &gt; D[a][c] + D[b][d]:</span>
+<span class="code-line">                    tour[i:j + <span class="code-number">1</span>] = <span class="code-function">reversed</span>(tour[i:j + <span class="code-number">1</span>])</span>
+<span class="code-line">                    is_improved = <span class="code-keyword">True</span></span>
+<span class="code-line">                    improved_here = <span class="code-keyword">True</span></span>
+<span class="code-line">                    <span class="code-keyword">break</span>  <span class="code-comment"># restart after any improvement</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">We already hold one road, from a to b. Now try every later road in the route as its partner.</p>
+              <p class="tl">That later road runs from c…</p>
+              <p class="tl">…to d. The "% n" wraps around, so the road after the last city leads back to the first.</p>
+              <p class="tl">Are the two current roads longer, added together, than the two roads we would get by reconnecting?</p>
+              <p class="tl">If so, reverse the stretch between them, which performs the reconnection.</p>
+              <p class="tl">Note that we found an improvement.</p>
+              <p class="tl">Stop scanning and start the search again from the top.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Only measure what changed</strong>
+            <p>The check compares four roads. It does not re-measure the whole route, because every other road stays the same. Engineers call this "delta evaluation". The project's README credits it with cutting a test run from about 20 seconds to about 0.2.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Work it out once, look it up forever</h2>
+        <p>The <code>D[a][b]</code> lookups above read from a <span class="term" data-definition="A table with one row and one column per city. The number where row a meets column b is the distance between those two cities, worked out in advance.">distance matrix</span>. Storing answers so you never compute them twice is called <span class="term" data-definition="Saving the result of slow work so that the next time you need it, you look it up instead of redoing it.">caching</span>. For 200 cities one table holds 40,000 distances.</p>
+
+        <p>Here the scout builds routes for the "nn" starting method. Look at what each call is given.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-keyword">if</span> method == <span class="code-string">"nn"</span>:</span>
+<span class="code-line">            <span class="code-keyword">for</span> i <span class="code-keyword">in</span> <span class="code-function">range</span>(p):</span>
+<span class="code-line">                tour = <span class="code-function">nearest_neighbour_tour</span>(cities, start_city=i % n, weight_type=weight_type)</span>
+<span class="code-line">                tour = <span class="code-function">two_opt_improvement</span>(tour, cities, weight_type=weight_type)</span>
+<span class="code-line">                population.<span class="code-function">append</span>(tour)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">If the chosen starting method is "nn"…</p>
+              <p class="tl">…do the following once for each of the 100 routes we need.</p>
+              <p class="tl">Build a nearest-neighbour route. The starting city cycles through the cities: 0, 1, 2… and back to 0 when they run out.</p>
+              <p class="tl">Tidy that route with 2-opt.</p>
+              <p class="tl">Add it to the crowd.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">🔍</div>
+          <div class="callout-content">
+            <strong class="callout-title">A missed lookup table</strong>
+            <p>Neither call is handed a ready-made distance table, so each one builds its own: 200 tables for 100 routes. The "smart" method in initialization.py builds the table once and passes it along. I have not timed how much this costs, but it is repeated work, and it is the kind of thing you can now spot and ask an AI tool to fix: "build the distance matrix once and pass it in."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What the head start buys</h2>
+        <p>These bars show the best single run for each starting method on the 200-city map, taken from the project's saved results. Shorter is better. The shortest possible is 29,368.</p>
+
+        <div style="background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-6); margin: var(--space-6) 0; font-family: var(--font-mono); font-size: var(--text-sm);">
+          <div style="display:grid; grid-template-columns: 5em 1fr; gap: var(--space-3) var(--space-3); align-items:center;">
+            <span>random</span>
+            <div><div style="width:100%; background: var(--color-actor-1); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">64,007 · 118% over</div></div>
+            <span>angle</span>
+            <div><div style="width:68%; background: var(--color-actor-3); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">43,782 · 49% over</div></div>
+            <span>nn</span>
+            <div><div style="width:46.4%; background: var(--color-actor-2); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">29,724 · 1.2% over</div></div>
+            <span>smart</span>
+            <div><div style="width:46.4%; background: var(--color-actor-5); color:#fff; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);">29,704 · 1.1% over</div></div>
+          </div>
+        </div>
+
+        <p>On the 52-city map the same table reads 7727, 7685, 7542 and 7542. Both nn and smart land exactly on the best possible route.</p>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The ceiling trap</strong>
+            <p>If the starting routes are already at or near perfect, the genetic algorithm has nothing left to improve, and every setting looks equally good. The code says so itself: experiments on settings default to random starts "to avoid smart ceiling". When you measure a change, make sure there is room for the measurement to move.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. The starting routes were already at the ceiling, so no setting could show a difference. Switching to random starts gives the settings something to work on."
+               data-explanation-wrong="Not quite. Identical flat lines mean nothing improved after the start. Ask what the starting routes looked like.">
+            <h3 class="quiz-question">You compare four mutation rates on berlin52 using the nn starting method. All four progress curves are flat lines sitting on top of each other at 7542. What is going on?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Mutation rate has no effect on genetic algorithms.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The chart code is drawing the same line four times by mistake.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The starting routes were already the best possible, so there was nothing for any setting to improve.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Right. The starting city cycles 0 to 13 and then repeats, and nothing in nearest neighbour or 2-opt is random. The same start always gives the same route, so the crowd holds many duplicates."
+               data-explanation-wrong="Look at 'start_city=i % n' in the code above. With 14 cities, route number 14 starts from city 0 again. Does anything random happen after that?">
+            <h3 class="quiz-question">The burma14 map has 14 cities. You ask for 100 starting routes with the nn method. How many genuinely different routes can you get?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At most 14, one per starting city. The rest are exact repeats.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>100, because each route is built separately.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>It varies from run to run depending on the seed.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Yes. Only the roads being reconnected change, so only those need measuring. Naming the technique gets you the right fix in one request."
+               data-explanation-wrong="Not quite. The waste is in re-measuring roads that did not change. There is a name for measuring only the difference.">
+            <h3 class="quiz-question">An AI tool writes a tidy-up step that re-measures the entire route for every pair of roads it considers. On 1,000 cities it is painfully slow. What do you ask for?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Use a faster computer."</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Use delta evaluation: compare only the two roads removed and the two roads added."</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>"Skip the tidy-up step for large maps."</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Can you trust the numbers?</h1>
+      <p class="module-subtitle">Luck is built into this program. Here is how the code keeps luck under control, and where its own notes have drifted from the truth.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A world seed for randomness</h2>
+        <p>In a world-building game, typing the same world seed gives every player the same mountains and rivers. Computer randomness works the same way. A <span class="term" data-definition="A starting number for a random-number generator. The same seed always produces the same sequence of 'random' choices, so a run can be repeated exactly.">seed</span> fixes every "random" choice that follows.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    rng = random.<span class="code-function">Random</span>(seed)</span>
+<span class="code-line">    init_fn = <span class="code-function">make_init_fn</span>(cities, init_method, weight_type)</span>
+
+<span class="code-line">    <span class="code-keyword">def</span> <span class="code-function">cost_fn</span>(tour, D):</span>
+<span class="code-line">        <span class="code-keyword">return</span> <span class="code-function">calculate_cost</span>(tour, D, weight_type)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Create a private source of random numbers for this one trial, started from the given seed.</p>
+              <p class="tl">Prepare the "make me starting routes" tool for the chosen starting method.</p>
+              <p class="tl">Prepare the "measure a route" tool…</p>
+              <p class="tl">…which uses the right distance rule for this map.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>That one random source is then handed to everything that needs luck: the shuffles, the mini-contests, the cut points, the tweaks. At the end of a full run, <code>main.py</code> proves it worked by running the same trial a second time.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    check = <span class="code-function">run_single</span>(cities, args.init_method, params, seed=args.seed,</span>
+<span class="code-line">                       weight_type=weight_type)</span>
+<span class="code-line">    <span class="code-keyword">assert</span> check[<span class="code-string">"best_cost"</span>] == best_cost, <span class="code-string">"Seed reproducibility broken!"</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Run the first trial again with the same cities, settings and seed.</p>
+              <p class="tl">The second answer must equal the first exactly. If it does not, stop and complain.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Reproducibility</strong>
+            <p>If you cannot repeat a run exactly, you cannot tell whether a change you made helped or you just got lucky. Being able to repeat it is called reproducibility, and it is the first thing to ask for in any program that uses randomness.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Parts that plug in</h2>
+        <p>The breeder does not make its own randomness, starting routes or measurements. All three are handed to it from outside. Engineers call this <span class="term" data-definition="Giving a piece of code the tools it needs from outside, instead of letting it create them itself. It makes the tools easy to swap, for example to compare two starting methods.">dependency injection</span>.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">rng</code>
+            <span class="badge-desc">The seeded source of random numbers. Swap the seed, get a different but repeatable run.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">init_fn</code>
+            <span class="badge-desc">The "make starting routes" tool. Swap it to compare random, nn, angle and smart.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">cost_fn</code>
+            <span class="badge-desc">The "measure a route" tool. Swap it to change the distance rule, or to plug in a fake one for testing.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">params</code>
+            <span class="badge-desc">The dials: population size, replacement rate, mutation rate, generations, contest size.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One knob at a time, many runs each</h2>
+        <p>With the default settings and random starts on berlin52, 30 runs that differed only in their seed finished anywhere from 7934 to 8731. That is a gap of 5% to 16% from luck alone, so a single run proves very little.</p>
+
+        <div class="step-cards">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Change one setting</strong>
+              <p>For example population size: 50, 100, 120, 150. Everything else stays at its default.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Repeat each value several times</strong>
+              <p>Every repeat gets its own seed, worked out from the master seed you typed.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Write every run down</strong>
+              <p>One line per run in a results file: map, setting, seed, final length, starting length, gap, time.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Compare averages</strong>
+              <p>The charts plot the average progress across the repeats, so one lucky run cannot mislead you.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-keyword">for</span> method <span class="code-keyword">in</span> INIT_METHODS:</span>
+<span class="code-line">        histories[method] = []</span>
+<span class="code-line">        <span class="code-keyword">for</span> run <span class="code-keyword">in</span> <span class="code-function">range</span>(runs):</span>
+<span class="code-line">            seed = base_seed + run  <span class="code-comment"># same seeds across methods =&gt; fair pairing</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">For each of the four starting methods…</p>
+              <p class="tl">…start an empty notebook for that method's progress curves.</p>
+              <p class="tl">Repeat the trial the requested number of times.</p>
+              <p class="tl">Repeat number 0 uses the master seed, repeat 1 uses master seed plus one, and so on. Every method gets the same list of seeds, so they all face the same luck.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A safety net for the best route</h2>
+        <p>Recall from Module 3 that survivors are chosen by mini-contest and any route can be tweaked. So the best route in the crowd can be lost between one generation and the next. The breeder keeps a private copy of the best route it has ever seen.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-comment"># Find the best tour in this generation</span></span>
+<span class="code-line">        generation_best = <span class="code-function">min</span>(costs)</span>
+
+<span class="code-line">        <span class="code-keyword">if</span> generation_best &lt; best_cost:</span>
+<span class="code-line">            best_index = costs.<span class="code-function">index</span>(generation_best)</span>
+<span class="code-line">            best_cost = generation_best</span>
+<span class="code-line">            best_tour = population[best_index][:]</span>
+
+<span class="code-line">        <span class="code-comment"># Save both the current best and the best ever found</span></span>
+<span class="code-line">        history_gen.<span class="code-function">append</span>(generation_best)</span>
+<span class="code-line">        history_best.<span class="code-function">append</span>(best_cost)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">What is the shortest route in the crowd right now?</p>
+              <p class="tl">Is it shorter than the best we have ever seen?</p>
+              <p class="tl">If so, find where it sits in the crowd…</p>
+              <p class="tl">…record its length as the new record…</p>
+              <p class="tl">…and keep a separate copy of the route itself, so later tweaks cannot damage it.</p>
+              <p class="tl">Write down two numbers for the charts: this generation's best, which can go up or down, and the all-time best, which can only improve.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">When the notes disagree with the code</h2>
+        <p>Comments and README files are written by people and go out of date. An AI tool that reads them will repeat what they say. Here are three places in this project where the notes and the code disagree.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">📝</div>
+            <div>
+              <strong>Which tweak is used?</strong>
+              <p>The description at the top of the breeder function says swap mutation is applied. The default settings choose inversion.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">📖</div>
+            <div>
+              <strong>Which starting method is the default?</strong>
+              <p>The README says "smart". The option list in main.py says "random".</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🏷️</div>
+            <div>
+              <strong>What is D?</strong>
+              <p>The breeder's first input is named D, which reads like "distance table". What it actually receives is the list of city coordinates.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The code is the truth</strong>
+            <p>When an AI tool tells you how a project behaves, ask: "did you read that in the code, or in a comment or README?" A useful instruction is "verify against the code and tell me where the documentation is out of date."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the bug</h2>
+        <p>Below is the random starting method after an imagined "tidy-up" by an AI tool. This is not the project's real code. The program still runs and still produces valid routes, but the reproducibility check in <code>main.py</code> can now fail. Click the line responsible.</p>
+
+        <div class="bug-challenge">
+          <h3>Find the line that breaks repeatability:</h3>
+          <div class="bug-code">
+            <div class="bug-line" data-line="1" data-hint="This line only names the tool and its inputs. Notice that rng is one of them, then look for where it should be used." onclick="checkBugLine(this, false)">
+              <span class="line-num">1</span>
+              <code>def random_population(population_size, num_cities, rng=None):</code>
+            </div>
+            <div class="bug-line" data-line="2" data-hint="An empty list to collect routes in. Nothing random here." onclick="checkBugLine(this, false)">
+              <span class="line-num">2</span>
+              <code>    population = []</code>
+            </div>
+            <div class="bug-line" data-line="3" data-hint="Repeating once per route is fine. Look inside the loop." onclick="checkBugLine(this, false)">
+              <span class="line-num">3</span>
+              <code>    for _ in range(population_size):</code>
+            </div>
+            <div class="bug-line" data-line="4" data-hint="This just lists the cities in order: 0, 1, 2 and so on. No luck involved yet." onclick="checkBugLine(this, false)">
+              <span class="line-num">4</span>
+              <code>        tour = [i for i in range(num_cities)]</code>
+            </div>
+            <div class="bug-line bug-target" data-line="5" data-explanation="This shuffle uses the computer's shared random source instead of the seeded rng that was passed in. The seed no longer controls the starting routes, so two runs with the same seed can differ. The real code says rng.shuffle(tour)." onclick="checkBugLine(this, true)">
+              <span class="line-num">5</span>
+              <code>        random.shuffle(tour)</code>
+            </div>
+            <div class="bug-line" data-line="6" data-hint="Adding the route to the list is harmless." onclick="checkBugLine(this, false)">
+              <span class="line-num">6</span>
+              <code>        population.append(tour)</code>
+            </div>
+            <div class="bug-line" data-line="7" data-hint="Handing back the finished list is harmless." onclick="checkBugLine(this, false)">
+              <span class="line-num">7</span>
+              <code>    return population</code>
+            </div>
+          </div>
+          <div class="bug-feedback"></div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Final check</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right. With the same settings, single runs on berlin52 ranged from 7934 to 8731. One run each cannot separate a real effect from luck."
+               data-explanation-wrong="Not quite. Remember the spread from seed alone: 7934 to 8731 with identical settings. One run of each tells you almost nothing.">
+            <h3 class="quiz-question">A teammate runs the program once with mutation rate 0.2 and once with 0.1. The 0.2 run is 150 shorter. They conclude 0.2 is better. What do you say?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Agreed. A shorter route is a shorter route.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Luck alone moves the result by more than that. Repeat each setting several times with different seeds and compare averages.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Run each once more, and if 0.2 wins again it is settled.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. Something is drawing luck from outside the seeded source. Searching for random choices that bypass rng is the direct route to the cause."
+               data-explanation-wrong="Think about what the seed controls. If the same seed gives different answers, some random choice is no longer coming from the seeded source.">
+            <h3 class="quiz-question">After an AI tool refactors the project, two runs with the same seed give different results. Where do you point the AI first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At the chart code, since the charts look different.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At the map files, in case they changed.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At any random choice that does not use the rng that was passed in.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Yes. The crowd's best can get worse when the leading route is tweaked or loses its place, while the all-time record is kept in a separate copy. Two lines, two meanings."
+               data-explanation-wrong="Not quite. Look back at the safety net: one number is the best in the crowd right now, the other is the best ever seen. Only one of them can go backwards.">
+            <h3 class="quiz-question">On a chart of "best in this generation", the line sometimes jumps upward, meaning worse. The final reported result is still the lowest point. Is something broken?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No. The crowd can lose its best route, but the all-time best is saved separately and is what gets reported.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes. A correct genetic algorithm can never get worse from one generation to the next.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes. The distance measurements must be changing between generations.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Words you can now use on purpose</h2>
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🎯</div>
+            <h4 class="pattern-title">Heuristic and gap</h4>
+            <p class="pattern-desc">"I do not need the perfect answer. Give me a heuristic and report the gap to the known best."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🌱</div>
+            <h4 class="pattern-title">Seeded and reproducible</h4>
+            <p class="pattern-desc">"Every random choice must come from one seeded generator that is passed in."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🗂️</div>
+            <h4 class="pattern-title">Cache and delta</h4>
+            <p class="pattern-desc">"Build the distance matrix once. Use delta evaluation instead of re-measuring everything."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🔌</div>
+            <h4 class="pattern-title">Inject, do not hard-code</h4>
+            <p class="pattern-desc">"Pass the starting method in as an input so I can swap it and compare."</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+  </main>
+
+</body>
+</html>

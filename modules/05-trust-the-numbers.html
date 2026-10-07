@@ -1,0 +1,354 @@
+<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Can you trust the numbers?</h1>
+      <p class="module-subtitle">Luck is built into this program. Here is how the code keeps luck under control, and where its own notes have drifted from the truth.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A world seed for randomness</h2>
+        <p>In a world-building game, typing the same world seed gives every player the same mountains and rivers. Computer randomness works the same way. A <span class="term" data-definition="A starting number for a random-number generator. The same seed always produces the same sequence of 'random' choices, so a run can be repeated exactly.">seed</span> fixes every "random" choice that follows.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    rng = random.<span class="code-function">Random</span>(seed)</span>
+<span class="code-line">    init_fn = <span class="code-function">make_init_fn</span>(cities, init_method, weight_type)</span>
+
+<span class="code-line">    <span class="code-keyword">def</span> <span class="code-function">cost_fn</span>(tour, D):</span>
+<span class="code-line">        <span class="code-keyword">return</span> <span class="code-function">calculate_cost</span>(tour, D, weight_type)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Create a private source of random numbers for this one trial, started from the given seed.</p>
+              <p class="tl">Prepare the "make me starting routes" tool for the chosen starting method.</p>
+              <p class="tl">Prepare the "measure a route" tool…</p>
+              <p class="tl">…which uses the right distance rule for this map.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>That one random source is then handed to everything that needs luck: the shuffles, the mini-contests, the cut points, the tweaks. At the end of a full run, <code>main.py</code> proves it worked by running the same trial a second time.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    check = <span class="code-function">run_single</span>(cities, args.init_method, params, seed=args.seed,</span>
+<span class="code-line">                       weight_type=weight_type)</span>
+<span class="code-line">    <span class="code-keyword">assert</span> check[<span class="code-string">"best_cost"</span>] == best_cost, <span class="code-string">"Seed reproducibility broken!"</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">Run the first trial again with the same cities, settings and seed.</p>
+              <p class="tl">The second answer must equal the first exactly. If it does not, stop and complain.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Reproducibility</strong>
+            <p>If you cannot repeat a run exactly, you cannot tell whether a change you made helped or you just got lucky. Being able to repeat it is called reproducibility, and it is the first thing to ask for in any program that uses randomness.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Parts that plug in</h2>
+        <p>The breeder does not make its own randomness, starting routes or measurements. All three are handed to it from outside. Engineers call this <span class="term" data-definition="Giving a piece of code the tools it needs from outside, instead of letting it create them itself. It makes the tools easy to swap, for example to compare two starting methods.">dependency injection</span>.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">rng</code>
+            <span class="badge-desc">The seeded source of random numbers. Swap the seed, get a different but repeatable run.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">init_fn</code>
+            <span class="badge-desc">The "make starting routes" tool. Swap it to compare random, nn, angle and smart.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">cost_fn</code>
+            <span class="badge-desc">The "measure a route" tool. Swap it to change the distance rule, or to plug in a fake one for testing.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">params</code>
+            <span class="badge-desc">The dials: population size, replacement rate, mutation rate, generations, contest size.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">One knob at a time, many runs each</h2>
+        <p>With the default settings and random starts on berlin52, 30 runs that differed only in their seed finished anywhere from 7934 to 8731. That is a gap of 5% to 16% from luck alone, so a single run proves very little.</p>
+
+        <div class="step-cards">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Change one setting</strong>
+              <p>For example population size: 50, 100, 120, 150. Everything else stays at its default.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Repeat each value several times</strong>
+              <p>Every repeat gets its own seed, worked out from the master seed you typed.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Write every run down</strong>
+              <p>One line per run in a results file: map, setting, seed, final length, starting length, gap, time.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Compare averages</strong>
+              <p>The charts plot the average progress across the repeats, so one lucky run cannot mislead you.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">    <span class="code-keyword">for</span> method <span class="code-keyword">in</span> INIT_METHODS:</span>
+<span class="code-line">        histories[method] = []</span>
+<span class="code-line">        <span class="code-keyword">for</span> run <span class="code-keyword">in</span> <span class="code-function">range</span>(runs):</span>
+<span class="code-line">            seed = base_seed + run  <span class="code-comment"># same seeds across methods =&gt; fair pairing</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">For each of the four starting methods…</p>
+              <p class="tl">…start an empty notebook for that method's progress curves.</p>
+              <p class="tl">Repeat the trial the requested number of times.</p>
+              <p class="tl">Repeat number 0 uses the master seed, repeat 1 uses master seed plus one, and so on. Every method gets the same list of seeds, so they all face the same luck.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A safety net for the best route</h2>
+        <p>Recall from Module 3 that survivors are chosen by mini-contest and any route can be tweaked. So the best route in the crowd can be lost between one generation and the next. The breeder keeps a private copy of the best route it has ever seen.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code><span class="code-line">        <span class="code-comment"># Find the best tour in this generation</span></span>
+<span class="code-line">        generation_best = <span class="code-function">min</span>(costs)</span>
+
+<span class="code-line">        <span class="code-keyword">if</span> generation_best &lt; best_cost:</span>
+<span class="code-line">            best_index = costs.<span class="code-function">index</span>(generation_best)</span>
+<span class="code-line">            best_cost = generation_best</span>
+<span class="code-line">            best_tour = population[best_index][:]</span>
+
+<span class="code-line">        <span class="code-comment"># Save both the current best and the best ever found</span></span>
+<span class="code-line">        history_gen.<span class="code-function">append</span>(generation_best)</span>
+<span class="code-line">        history_best.<span class="code-function">append</span>(best_cost)</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">What is the shortest route in the crowd right now?</p>
+              <p class="tl">Is it shorter than the best we have ever seen?</p>
+              <p class="tl">If so, find where it sits in the crowd…</p>
+              <p class="tl">…record its length as the new record…</p>
+              <p class="tl">…and keep a separate copy of the route itself, so later tweaks cannot damage it.</p>
+              <p class="tl">Write down two numbers for the charts: this generation's best, which can go up or down, and the all-time best, which can only improve.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">When the notes disagree with the code</h2>
+        <p>Comments and README files are written by people and go out of date. An AI tool that reads them will repeat what they say. Here are three places in this project where the notes and the code disagree.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">📝</div>
+            <div>
+              <strong>Which tweak is used?</strong>
+              <p>The description at the top of the breeder function says swap mutation is applied. The default settings choose inversion.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">📖</div>
+            <div>
+              <strong>Which starting method is the default?</strong>
+              <p>The README says "smart". The option list in main.py says "random".</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🏷️</div>
+            <div>
+              <strong>What is D?</strong>
+              <p>The breeder's first input is named D, which reads like "distance table". What it actually receives is the list of city coordinates.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The code is the truth</strong>
+            <p>When an AI tool tells you how a project behaves, ask: "did you read that in the code, or in a comment or README?" A useful instruction is "verify against the code and tell me where the documentation is out of date."</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the bug</h2>
+        <p>Below is the random starting method after an imagined "tidy-up" by an AI tool. This is not the project's real code. The program still runs and still produces valid routes, but the reproducibility check in <code>main.py</code> can now fail. Click the line responsible.</p>
+
+        <div class="bug-challenge">
+          <h3>Find the line that breaks repeatability:</h3>
+          <div class="bug-code">
+            <div class="bug-line" data-line="1" data-hint="This line only names the tool and its inputs. Notice that rng is one of them, then look for where it should be used." onclick="checkBugLine(this, false)">
+              <span class="line-num">1</span>
+              <code>def random_population(population_size, num_cities, rng=None):</code>
+            </div>
+            <div class="bug-line" data-line="2" data-hint="An empty list to collect routes in. Nothing random here." onclick="checkBugLine(this, false)">
+              <span class="line-num">2</span>
+              <code>    population = []</code>
+            </div>
+            <div class="bug-line" data-line="3" data-hint="Repeating once per route is fine. Look inside the loop." onclick="checkBugLine(this, false)">
+              <span class="line-num">3</span>
+              <code>    for _ in range(population_size):</code>
+            </div>
+            <div class="bug-line" data-line="4" data-hint="This just lists the cities in order: 0, 1, 2 and so on. No luck involved yet." onclick="checkBugLine(this, false)">
+              <span class="line-num">4</span>
+              <code>        tour = [i for i in range(num_cities)]</code>
+            </div>
+            <div class="bug-line bug-target" data-line="5" data-explanation="This shuffle uses the computer's shared random source instead of the seeded rng that was passed in. The seed no longer controls the starting routes, so two runs with the same seed can differ. The real code says rng.shuffle(tour)." onclick="checkBugLine(this, true)">
+              <span class="line-num">5</span>
+              <code>        random.shuffle(tour)</code>
+            </div>
+            <div class="bug-line" data-line="6" data-hint="Adding the route to the list is harmless." onclick="checkBugLine(this, false)">
+              <span class="line-num">6</span>
+              <code>        population.append(tour)</code>
+            </div>
+            <div class="bug-line" data-line="7" data-hint="Handing back the finished list is harmless." onclick="checkBugLine(this, false)">
+              <span class="line-num">7</span>
+              <code>    return population</code>
+            </div>
+          </div>
+          <div class="bug-feedback"></div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Final check</h2>
+
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="Right. With the same settings, single runs on berlin52 ranged from 7934 to 8731. One run each cannot separate a real effect from luck."
+               data-explanation-wrong="Not quite. Remember the spread from seed alone: 7934 to 8731 with identical settings. One run of each tells you almost nothing.">
+            <h3 class="quiz-question">A teammate runs the program once with mutation rate 0.2 and once with 0.1. The 0.2 run is 150 shorter. They conclude 0.2 is better. What do you say?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Agreed. A shorter route is a shorter route.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Luck alone moves the result by more than that. Repeat each setting several times with different seeds and compare averages.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Run each once more, and if 0.2 wins again it is settled.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="Exactly. Something is drawing luck from outside the seeded source. Searching for random choices that bypass rng is the direct route to the cause."
+               data-explanation-wrong="Think about what the seed controls. If the same seed gives different answers, some random choice is no longer coming from the seeded source.">
+            <h3 class="quiz-question">After an AI tool refactors the project, two runs with the same seed give different results. Where do you point the AI first?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At the chart code, since the charts look different.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At the map files, in case they changed.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At any random choice that does not use the rng that was passed in.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="Yes. The crowd's best can get worse when the leading route is tweaked or loses its place, while the all-time record is kept in a separate copy. Two lines, two meanings."
+               data-explanation-wrong="Not quite. Look back at the safety net: one number is the best in the crowd right now, the other is the best ever seen. Only one of them can go backwards.">
+            <h3 class="quiz-question">On a chart of "best in this generation", the line sometimes jumps upward, meaning worse. The final reported result is still the lowest point. Is something broken?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>No. The crowd can lose its best route, but the all-time best is saved separately and is what gets reported.</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes. A correct genetic algorithm can never get worse from one generation to the next.</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Yes. The distance measurements must be changing between generations.</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Words you can now use on purpose</h2>
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🎯</div>
+            <h4 class="pattern-title">Heuristic and gap</h4>
+            <p class="pattern-desc">"I do not need the perfect answer. Give me a heuristic and report the gap to the known best."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🌱</div>
+            <h4 class="pattern-title">Seeded and reproducible</h4>
+            <p class="pattern-desc">"Every random choice must come from one seeded generator that is passed in."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🗂️</div>
+            <h4 class="pattern-title">Cache and delta</h4>
+            <p class="pattern-desc">"Build the distance matrix once. Use delta evaluation instead of re-measuring everything."</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🔌</div>
+            <h4 class="pattern-title">Inject, do not hard-code</h4>
+            <p class="pattern-desc">"Pass the starting method in as an input so I can swap it and compare."</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
