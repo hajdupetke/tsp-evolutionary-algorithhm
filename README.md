@@ -4,7 +4,7 @@ Genetic Algorithm (GA) for the **Travelling Salesman Problem (TSP)**,
 implemented in pure Python (stdlib + matplotlib).
 
 Target benchmark: **berlin52** (52 cities, known optimum **7542**).
-Example result with `--init-method smart`: **7542.0** (gap 0.00%, TSPLIB metric).
+Example result with `--init-method nn`: **7542.0** (gap 0.00%, TSPLIB metric).
 
 Group members: 
 - Christos Zampounis
@@ -24,10 +24,10 @@ Mitchell (1997) GA template adapted to TSP permutation representation:
 | Fitness         | F(π) = 1 / C(π)               | Report Eq. (5)    |
 | Selection       | Tournament selection (k=5)    | Report Section 3  |
 | Crossover       | Order Crossover (OX)          | Hussain et al. (2017) |
-| Mutation        | Swap mutation                 | Report Section 3  |
+| Mutation        | Inversion mutation            | Report Section 3  |
 | Survivor policy | Tournament selection (k=5)    | Algorithm 1       |
 
-Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, init='smart'`.
+Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, mutation='inversion'`, init `random`.
 
 ## Repository structure
 
@@ -41,9 +41,9 @@ Default parameters: `p=100, r=0.7, m=0.1, G=500, k=5, init='smart'`.
 │   ├── ga.py               ← main GA loop (Algorithm 1) + random-search baseline
 │   ├── experiments.py      ← all 5 experiments, writes results/results.txt
 │   └── plot.py             ← convergence + tour + scaling figures
-├── data/                   ← berlin52, burma14, kroA100, kroA200 (.tsp, gitignored — see Setup)
+├── data/                   ← the 6 .tsp instances, committed
 ├── scripts/
-│   └── download_data.py      ← fetches the 4 .tsp files into data/ (stdlib only)
+│   └── download_data.py      ← fetches the 6 .tsp files into data/ (stdlib only)
 ├── results/                ← results.txt + .png figures (generated)
 ├── tests/ + src/tests/     ← pytest suite (44 tests)
 └── README.md
@@ -62,10 +62,10 @@ uv sync
 
 ## Setup: datasets
 
-`data/` is gitignored, so a fresh clone has no `.tsp` files. Download them first:
+The `.tsp` files are committed, so a fresh clone runs as-is. Only needed if one goes missing:
 
 ```bash
-python scripts/download_data.py              # fetch all 4 datasets into data/
+python scripts/download_data.py              # fetch all 6 datasets into data/
 python scripts/download_data.py --force      # re-download even if files exist
 python scripts/download_data.py berlin52     # fetch a single dataset
 ```
@@ -91,7 +91,7 @@ python main.py --seed 123               # repeatable run with a different master
 | `--generations`      | 500     | Generations `G`                          |
 | `--replacement-rate` | 0.7     | Fraction replaced by crossover `r`       |
 | `--mutation-rate`    | 0.1     | Mutation rate `m`                        |
-| `--init-method`      | smart   | `random` \| `nn` \| `angle` \| `smart`   |
+| `--init-method`      | random  | `random` \| `nn` \| `angle` \| `smart`   |
 | `--runs`             | 10      | Repetitions per experiment configuration |
 | `--skip-experiments` | off     | Skip the full suite                      |
 | `--quick`            | off     | Shortcut for `G=20, runs=2`              |
@@ -107,13 +107,13 @@ identical output.
 | # | Varies | Values | Dataset(s) | Runs |
 |---|--------|--------|------------|------|
 | 1 | init method | random, nn, angle, smart | berlin52 | 10 |
-| 2 | problem size | burma14, berlin52, kroA100, kroA200 | all, smart init | 10 |
-| 3 | population `p` | 50, 100, 150, 200 | berlin52 | 10 |
+| 2 | problem size | burma14, berlin52, kroA100, kroA200, pcb442, pr1002 | all, random init | 10 |
+| 3 | population `p` | 50, 100, 120, 150 | berlin52 | 10 |
 | 4 | mutation `m` | 0.05, 0.1, 0.2, 0.4 | berlin52 | 10 |
 | 5 | replacement `r` | 0.3, 0.5, 0.7, 0.9 | berlin52 | 10 |
 
 Known optimals used for gap computation: burma14 3323, berlin52 7542,
-kroA100 21282, kroA200 29368. `results/results.txt` contains one CSV-style
+kroA100 21282, kroA200 29368, pcb442 50778, pr1002 259045. `results/results.txt` contains one CSV-style
 section per experiment (`dataset,...,run,seed,best_cost,...,time_seconds`).
 
 ## Tests
