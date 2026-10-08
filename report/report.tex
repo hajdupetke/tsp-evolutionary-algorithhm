@@ -275,13 +275,16 @@ kroA200. The nearest-neighbour and combined ones already start at the optimum
 on burma14 and berlin52 (mean gap 0.00\%) and within about 2\% of it on
 kroA100 and kroA200, and the GA improves them by less than 0.3 percentage
 points, whereas the random and angle-based ones improve substantially.
+
 Second, each hyperparameter is swept on the same four instances, one at a
 time: population size $p \in \{50,100,120,150\}$, generations
 $G \in \{100,300,500,800\}$, mutation rate $m \in \{0.05,0.1,0.2,0.4\}$ and
 replacement rate $r \in \{0.3,0.5,0.7,0.9\}$; swap and inversion mutation are
 also compared on berlin52, and inversion is retained. Each sweep is repeated
 for all four initialisations and varies one parameter around the default
-configuration ($p=100$, $r=0.7$, $m=0.1$, $G=500$). Third, the problem-size
+configuration ($p=100$, $r=0.7$, $m=0.1$, $G=500$).
+
+Third, the problem-size
 scaling experiment repeats this configuration on the six instances, using the
 random initialisation.
 
