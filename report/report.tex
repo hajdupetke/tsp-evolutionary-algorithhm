@@ -1,0 +1,353 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{setspace}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------
+% Header / footer
+% ---------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\itshape TARI29 Artificial Intelligence, 2026}
+\fancyhead[R]{\itshape Evolutionary Computation Assignment}
+\fancyfoot[C]{Page \thepage{} of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\itshape TARI29 Artificial Intelligence, 2026}%
+  \fancyfoot[C]{Page \thepage{} of \pageref{LastPage}}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+% ---------------------------------------------------------------
+% Title block
+% ---------------------------------------------------------------
+\newcommand{\groupnumber}{9}
+\title{Group \groupnumber{} Assignment Report\\[0.2em]
+  \large An Evolutionary Algorithm for the Travelling Salesman Problem}
+\author{%
+  Christos Zampounis \quad Mehmet Cihan Yalcin \quad P\'eter D\'avid Hajdu\\[0.3em]
+  Pierre Kasparian \quad Prajval Parthiban}
+\date{September 30, 2026}
+
+% Red helper for the template's instructions
+\newcommand{\instruction}[1]{\textcolor{red}{#1}}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{plain}
+
+% ===============================================================
+\section{Introduction}
+The goal of this assignment is to design, implement and experimentally evaluate
+an evolutionary algorithm for a combinatorial optimisation problem. We chose the
+Travelling Salesman Problem, whose discrete, permutation-based search space and
+relevance to routing and logistics make it a natural and challenging testbed for
+evolutionary computation. This report presents our problem formulation, the
+evolutionary approach and operators we developed, and an experimental analysis
+of its solution quality and convergence behaviour.
+
+% ===============================================================
+\section{The Travelling Salesman Problem}
+
+\subsection{Mathematical Formulation}
+
+The Travelling Salesman Problem (TSP) is a classical combinatorial
+optimisation problem that, despite its simple formulation, is difficult to
+solve: given a set of $N$ cities and the distances between them, the task is
+to find the shortest closed tour that visits every city exactly once. The
+problem is NP-hard and no exact algorithm can solve it in polynomial time.
+Following the formulation of Potvin~\cite{potvin1996}, we model the problem
+on a complete weighted graph $G=(V,E)$, where $V=\{1,\dots,N\}$ is the set of
+cities and $d_{ij}$ is the distance between cities $i$ and $j$. The decision
+variables are $x_{ij}\in\{0,1\}$, where $x_{ij}=1$ if and only if the tour
+travels directly from city $i$ to city $j$. The objective is to minimise the
+total travelled distance,
+\begin{equation}
+  \text{Minimise} \quad \sum_{i=1}^{N}\sum_{j=1}^{N} d_{ij}\,x_{ij},
+  \label{eq:tsp_objective}
+\end{equation}
+subject to the degree constraints
+\begin{equation}
+  \sum_{j=1}^{N} x_{ij}=1, \quad i=1,\dots,N,
+  \qquad
+  \sum_{i=1}^{N} x_{ij}=1, \quad j=1,\dots,N,
+  \label{eq:tsp_degree}
+\end{equation}
+which require every city to have exactly one incoming and one outgoing edge,
+and the subtour-elimination constraints
+\begin{equation}
+  \sum_{i,j\in S} x_{ij} \;\le\; |S|-1,
+  \qquad \forall\, S\subset V,\; 2\le |S|\le N-1,
+  \label{eq:tsp_subtour}
+\end{equation}
+which forbid partial cycles over any proper subset $S$ of the cities. Without
+constraints~\eqref{eq:tsp_subtour}, the model reduces to the assignment problem
+and its optimal solution generically consists of several disconnected subtours
+rather than a single tour. For symmetric instances, such as the Euclidean TSP
+(ETSP) considered in this report, the optimal solution of the assignment-problem
+relaxation typically contains many two-vertex subtours; such instances are
+therefore better tackled by specialised algorithms that exploit this
+structure~\cite{potvin1996}.
+
+Because an evolutionary algorithm operates on orderings rather than on binary
+edge variables, it is convenient to state the equivalent tour-as-permutation
+formulation. A candidate solution is a permutation
+$\pi=(\pi_1,\dots,\pi_N)$ of the cities, and its cost is the length of the
+cycle that visits them in that order,
+\begin{equation}
+  C(\pi) \;=\; \sum_{k=1}^{N-1} d_{\pi_k,\pi_{k+1}} \;+\; d_{\pi_N,\pi_1}.
+  \label{eq:tsp_permutation}
+\end{equation}
+The evolutionary algorithm therefore seeks a permutation minimising
+Equation~\eqref{eq:tsp_permutation}; this representation is the one adopted
+throughout this report.
+
+% ===============================================================
+\subsection{Related Evolutionary Approaches}
+\label{sec:related}
+
+Liu~\cite{liu2014} builds a genetic algorithm around a crossover operator
+called \emph{Edge Swapping} (ES), which keeps the edges shared by the two
+parent tours and swaps in the cycles where they disagree; seeding the
+population with greedy tours refined by 2-opt, it reaches best-known solutions
+on large benchmarks. Liao et al.~\cite{liao2012} propose GPSO, a genetic-based
+particle swarm optimisation in which each particle is a real-valued vector
+decoded into a tour by ranking its components, initialised geometrically by
+sorting cities by their angle around the geographical centre, which produces a
+non-crossing route. For the path representation, where a chromosome is the
+visiting order and classical one-point or uniform crossovers cannot be used as
+they duplicate cities, Hussain et al.~\cite{hussain2017} compare partially
+mapped (PMX), order (OX) and cycle crossover, where a segment of one parent is
+copied into the child and the remaining cities are filled in their order of
+appearance in the other parent; no operator dominates on TSPLIB.
+
+% ===============================================================
+\subsection{Motivation of the Developed Approach}
+
+The evolutionary approach we develop follows the genetic algorithm presented in
+Section~9.2 of Mitchell~\cite{mitchell1997}, adapted to the permutation
+representation of the TSP; its pseudo-code is given in
+Section~\ref{sec:algorithm}. Within this template, the design choices left open
+concern the initialization of the population and the crossover operator, which
+we align with the literature reviewed in Section~\ref{sec:related}. We
+initialize the population from informed tours rather than at random, combining
+greedy nearest-neighbour tours refined by 2-opt~\cite{liu2014} with geometric,
+non-crossing tours~\cite{liao2012}; for recombination we adopt the order
+crossover (OX)~\cite{hussain2017}. The remaining operators are left
+unchanged, so that the effect of the two adapted components can be isolated in
+Section~\ref{sec:experimental}.
+
+% ===============================================================
+\subsection{Related Evolutionary Approaches}
+\label{sec:related}
+
+\subsubsection{Edge-Swapping Genetic Algorithm (Liu, 2014)}
+Liu~\cite{liu2014} builds a genetic algorithm around a crossover operator
+called \emph{Edge Swapping} (ES), which keeps the edges shared by the two
+parent tours and swaps in the cycles where they disagree. The population is
+initialised not randomly but with a greedy local search using the 2-opt
+neighbourhood, and on large benchmarks the algorithm reaches best-known
+solutions. Following Liu, we therefore seed our own population with greedy
+nearest-neighbour tours refined by 2-opt.
+
+\subsubsection{Genetic-based Particle Swarm Optimization (Liao et al., 2012)}
+Liao et al.~\cite{liao2012} propose GPSO, a genetic-based particle swarm
+optimisation in which each particle is a real-valued vector decoded into a tour
+by ranking its components. We adopt their geometric initialisation: cities are
+sorted by their angle around the geographical centre, producing a non-crossing
+route. 
+
+\subsubsection{Genetic Algorithm with Order Crossover (Hussain et al., 2017)}
+Hussain et al.~\cite{hussain2017} compare crossover operators for the path
+representation, where a chromosome is the visiting order and classical
+one-point or uniform crossovers cannot be used as they duplicate cities. They
+review partially mapped (PMX), order (OX) and cycle crossover, and propose a
+modified CX2, but no operator dominated on TSPLIB. We adopt OX: a segment of
+one parent is copied into the child and the remaining cities are filled in
+their order of appearance in the other parent, always yielding a valid tour.
+
+% ===============================================================
+\subsection{Motivation of the Developed Approach}
+
+The evolutionary approach we develop follows the genetic algorithm presented in
+Section~9.2 of Mitchell~\cite{mitchell1997}, adapted to the permutation
+representation of the TSP; its pseudo-code is given in
+Section~\ref{sec:algorithm}. Within this template, the design choices left open
+concern the initialization of the population and the crossover operator, which
+we align with the literature reviewed in Section~\ref{sec:related}. We
+initialize the population from informed tours rather than at random, combining
+greedy nearest-neighbour tours refined by 2-opt~\cite{liu2014} with geometric,
+non-crossing tours~\cite{liao2012}; for recombination we adopt the order
+crossover (OX)~\cite{hussain2017}. The remaining operators are left
+unchanged, so that the effect of the two adapted components can be isolated in
+Section~\ref{sec:experimental}.
+
+% ===============================================================
+\section{Algorithm}
+\label{sec:algorithm}
+Each individual is represented as a permutation of all cities, where the order
+of the cities defines the tour and the final city is connected back to the first.
+The initial population consists of $p$ tours generated by the selected
+initialization method.
+The cost of an individual is given by Equation~\eqref{eq:tsp_permutation}.
+Since the TSP is a minimisation problem, this cost is converted into a
+maximisation-based fitness function defined as
+\begin{equation}
+    F(\pi) = \frac{1}{C(\pi)}.
+    \label{eq:fitness}
+\end{equation}
+Consequently, shorter tours receive higher fitness values and are favoured
+during selection. In the implementation,
+tour costs are used directly where possible, since minimizing $C(\pi)$ is
+equivalent to maximizing $F(\pi)$.
+
+In each generation, approximately a fraction $(1-r)$ of the population is
+selected deterministically by retaining the individuals with the lowest tour
+costs. These individuals are copied to the new population before mutation.
+The remaining fraction is filled with offspring generated from selected parent
+pairs.
+
+Parent selection for crossover is performed using tournament selection.
+For each parent, $k$ individuals are sampled randomly from the current
+population, and the individual with the lowest tour cost is selected.
+The process is repeated to obtain the second parent. Tournament selection
+provides selection pressure towards shorter tours while still allowing
+different individuals to participate in reproduction.
+
+Order Crossover (OX) is used to generate offspring because it preserves valid permutations. A segment from one parent is copied to the offspring,
+while the remaining cities are inserted according to their order in the second parent, skipping already used cities. Two offspring are generated for each parent pair
+by swapping the parent roles.
+
+After crossover, mutation is applied to a fraction $m$ of the new population. 
+The individuals to be mutated are selected uniformly at random.
+Depending on the experiment, either swap mutation or inversion mutation is
+used. Swap mutation exchanges two randomly selected positions in a tour,
+whereas inversion mutation reverses the order of the cities within a randomly
+selected segment. Both mutation operators preserve a valid permutation.
+
+Once mutation has been applied, the new population replaces the previous one
+and all tour costs are evaluated again. The best tour found so far is stored
+throughout the run. This means that even if a previously good individual is
+later modified by mutation or disappears from the population, the best solution
+encountered during the search is not lost.
+
+The process is repeated for $G$ generations. After termination, the best tour
+encountered during the complete run is returned.
+
+
+\begin{algorithm}[H]
+\caption{Genetic Algorithm for the Travelling Salesman Problem}
+\begin{algorithmic}
+\Require cities $D$, population size $p$, replacement rate $r$, mutation rate $m$, number of generations $G$, tournament size $k$
+\Ensure best tour found
+
+\State $P \gets$ generate $p$ initial tours
+\State evaluate the cost of each individual in $P$
+\State $best \gets$ individual in $P$ with minimum cost
+
+\For{$g = 1$ to $G$}
+    \State create new generation $P_s \gets \emptyset$
+
+    \Statex
+    \State \textbf{Selection:}
+    \State $q \gets \operatorname{round}(rp/2)$
+    \State $s \gets p - 2q$
+    \State add the best $s$ individuals from $P$ to $P_s$
+
+    \Statex
+    \State \textbf{Crossover:}
+    \For{$i = 1$ to $q$}
+        \State select $h_1$ from $P$ using tournament selection of size $k$
+        \State select $h_2$ from $P$ using tournament selection of size $k$
+        \State $o_1 \gets \textsc{OrderCrossover}(h_1,h_2)$
+        \State $o_2 \gets \textsc{OrderCrossover}(h_2,h_1)$
+        \State add $o_1$ and $o_2$ to $P_s$
+    \EndFor
+
+     \Statex
+    \State \textbf{Mutation:}
+    \State uniformly select $mp$ individuals from $P_s$
+    \For{each selected individual $\pi$}
+        \State apply the selected mutation operator to $\pi$
+    \EndFor
+
+    \Statex
+    \State \textbf{Update:}
+    \State $P \gets P_s$
+
+    \Statex
+    \State \textbf{Evaluation:}
+    \State evaluate the cost of each individual in $P$
+
+    \If{the best individual in $P$ has lower cost than $best$}
+        \State update $best$
+    \EndIf
+\EndFor
+
+\State \Return $best$
+
+\end{algorithmic}
+\end{algorithm}
+% ===============================================================
+\section{Experimental part}
+\label{sec:experimental}
+
+% ===============================================================
+\section{Results and Analysis}
+
+% ===============================================================
+\section{Conclusions}
+
+% ===============================================================
+\begin{thebibliography}{9}
+
+\bibitem{potvin1996}
+J.-Y. Potvin, ``Genetic algorithms for the traveling salesman problem,''
+\emph{Annals of Operations Research}, vol.~63, no.~3, pp.~339--370, 1996.
+\url{https://doi.org/10.1007/BF02125403}.
+
+\bibitem{liu2014}
+S.~Liu, ``A Powerful Genetic Algorithm for Traveling Salesman Problem,''
+arXiv:1402.4699, 2014. \url{https://arxiv.org/abs/1402.4699}.
+
+\bibitem{liao2012}
+Y.-F.~Liao, D.-H.~Yau, and C.-L.~Chen, ``Evolutionary algorithm to traveling
+salesman problems,'' \emph{Computers \& Mathematics with Applications},
+vol.~64, no.~5, pp.~788--797, 2012.
+\url{https://doi.org/10.1016/j.camwa.2011.12.018}.
+
+\bibitem{hussain2017}
+A.~Hussain, Y.~S.~Muhammad, M.~N.~Sajid, I.~Hussain, A.~M.~Shoukry, and
+S.~Gani, ``Genetic algorithm for traveling salesman problem with modified cycle
+crossover operator,'' \emph{Computational Intelligence and Neuroscience},
+vol.~2017, Article ID 7430125, 7 pages, 2017.
+\url{https://doi.org/10.1155/2017/7430125}.
+
+\bibitem{mitchell1997}
+T.~M. Mitchell, \emph{Machine Learning}. New York, NY, USA: McGraw-Hill, 1997,
+ch.~9, sec.~9.2.
+\url{https://www.cs.cmu.edu/~tom/files/MachineLearningTomMitchell.pdf}.
+
+\end{thebibliography}
+
+\end{document}
