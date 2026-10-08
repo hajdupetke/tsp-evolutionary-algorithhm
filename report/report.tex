@@ -71,11 +71,10 @@ of its solution quality and convergence behaviour.
 
 \subsection{Mathematical Formulation}
 
-The Travelling Salesman Problem (TSP) is a classical combinatorial
-optimisation problem that, despite its simple formulation, is difficult to
-solve: given a set of $N$ cities and the distances between them, the task is
-to find the shortest closed tour that visits every city exactly once. The
-problem is NP-hard and no exact algorithm can solve it in polynomial time.
+The Travelling Salesman Problem (TSP) is a classical NP-hard combinatorial
+optimisation problem: given a set of $N$ cities and the distances between them,
+the task is to find the shortest closed tour that visits every city exactly
+once.
 Following the formulation of Potvin~\cite{potvin1996}, we model the problem
 on a complete weighted graph $G=(V,E)$, where $V=\{1,\dots,N\}$ is the set of
 cities and $d_{ij}$ is the distance between cities $i$ and $j$. The decision
@@ -100,14 +99,7 @@ and the subtour-elimination constraints
   \qquad \forall\, S\subset V,\; 2\le |S|\le N-1,
   \label{eq:tsp_subtour}
 \end{equation}
-which forbid partial cycles over any proper subset $S$ of the cities. Without
-constraints~\eqref{eq:tsp_subtour}, the model reduces to the assignment problem
-and its optimal solution generically consists of several disconnected subtours
-rather than a single tour. For symmetric instances, such as the Euclidean TSP
-(ETSP) considered in this report, the optimal solution of the assignment-problem
-relaxation typically contains many two-vertex subtours; such instances are
-therefore better tackled by specialised algorithms that exploit this
-structure~\cite{potvin1996}.
+which forbid partial cycles over any proper subset $S$ of the cities.
 
 Because an evolutionary algorithm operates on orderings rather than on binary
 edge variables, it is convenient to state the equivalent tour-as-permutation
@@ -119,8 +111,7 @@ cycle that visits them in that order,
   \label{eq:tsp_permutation}
 \end{equation}
 The evolutionary algorithm therefore seeks a permutation minimising
-Equation~\eqref{eq:tsp_permutation}; this representation is the one adopted
-throughout this report.
+Equation~\eqref{eq:tsp_permutation}.
 
 % ===============================================================
 \subsection{Related Evolutionary Approaches}
