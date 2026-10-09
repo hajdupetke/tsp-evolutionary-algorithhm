@@ -17,6 +17,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage[hidelinks]{hyperref}
+\usepackage{capt-of}
 
 % ---------------------------------------------------------------
 % Header / footer
@@ -294,6 +295,185 @@ uses the four first datasets while the scaling experiment covers all six instanc
 
 % ===============================================================
 \section{Results and Analysis}
+\label{sec:results}
+
+\subsection{Effect of the Initialisation}
+
+\begin{table}[H]
+\centering
+\caption{Mean gap (\%) $\pm$ standard deviation and mean running time per run
+for each initialisation, default parameters ($p=100$, $G=500$, $m=0.1$,
+$r=0.7$), 30 runs per cell. In parentheses: mean gap of the best initial tour.}
+\label{tab:init}
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+Instance & Random & NN + 2-opt & Angle-based & Combined \\
+\midrule
+\multicolumn{5}{l}{\textit{Gap (\%)}} \\
+burma14 & 0.50 $\pm$ 1.34 (50) & 0.00 $\pm$ 0.00 (0) & 0.20 $\pm$ 0.20 (11) & 0.00 $\pm$ 0.00 (0) \\
+berlin52 & 9.20 $\pm$ 3.09 (240) & 0.00 $\pm$ 0.00 (0) & 10.71 $\pm$ 3.73 (92) & 0.00 $\pm$ 0.00 (0) \\
+kroA100 & 44.52 $\pm$ 7.20 (610) & 1.55 $\pm$ 0.50 (2) & 24.46 $\pm$ 4.76 (144) & 1.88 $\pm$ 0.14 (2) \\
+kroA200 & 162.69 $\pm$ 8.65 (960) & 2.08 $\pm$ 0.28 (2) & 70.99 $\pm$ 5.23 (203) & 1.96 $\pm$ 0.34 (2) \\
+\midrule
+\multicolumn{5}{l}{\textit{Time (s)}} \\
+burma14 & 0.75 & 0.78 & 0.76 & 0.78 \\
+berlin52 & 0.80 & 1.06 & 0.82 & 0.87 \\
+kroA100 & 1.44 & 3.00 & 1.49 & 1.93 \\
+kroA200 & 2.75 & 12.55 & 2.80 & 7.31 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Of the algorithm settings we varied, the initialisation had the largest effect
+on solution quality (Table~\ref{tab:init}). With NN + 2-opt and Combined
+seeding, the best initial tour on burma14 and berlin52 was already optimal, so
+the GA could not improve it further. On kroA100 and kroA200 these initial tours
+were about 2\% above the optimum, and the GA reduced the gap by less than 0.4
+percentage points.
+
+Random and angle-based seeding left considerably more to the GA. On kroA100 the
+gap fell from 610\% for the best random initial tour to 44.5\% after 500
+generations, and from 144\% to 24.5\% for the angle-based initialisation.
+Figure~\ref{fig:conv} shows the corresponding convergence curves. The
+angle-based initialisation also ended with a lower gap than random on burma14
+and kroA200. On berlin52, however, it ended higher (10.7\% against 9.2\%),
+although it started from a much shorter tour (92\% against 240\%).
+
+The nearest-neighbour seeding increased the running time, and the increase
+grew with instance size. On kroA200 a run took 12.6~s with NN + 2-opt and
+7.3~s with Combined seeding, against 2.8~s with random or angle-based
+initialisation. On burma14 all four methods took about 0.8~s.
+
+\begin{figure}[tb]
+\centering
+\begin{minipage}[c]{0.40\textwidth}
+\centering
+\includegraphics[width=\textwidth]{../results/init_comparison_only/kroA100/convergence_init.png}
+\caption{Mean best tour cost on kroA100 (30 runs). nn = NN + 2-opt,
+smart = Combined (curves overlap).}
+\label{fig:conv}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\textwidth}
+\centering
+\captionof{table}{Scaling with random initialisation and default parameters,
+30 runs per instance.}
+\label{tab:scaling}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrr}
+\toprule
+Instance & Gap (\%) & SD & Time (s) \\
+\midrule
+burma14 (14) & 0.5 & 1.2 & 2.0 \\
+berlin52 (52) & 11.2 & 3.3 & 2.2 \\
+kroA100 (100) & 46.6 & 6.2 & 3.8 \\
+kroA200 (200) & 160.8 & 12.4 & 7.4 \\
+pcb442 (442) & 442.4 & 12.3 & 17.3 \\
+pr1002 (1002) & 1086.3 & 16.2 & 40.4 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{figure}
+
+\subsection{Parameter Sensitivity}
+
+\begin{table}[H]
+\centering
+\caption{Mean gap (\%) with random initialisation when one parameter is varied
+and the others are kept at their default values (in bold). 30 runs per cell
+(10 for kroA200). bur14 = burma14, ber52 = berlin52, kA = kroA.}
+\label{tab:sweep}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\begin{tabular}{llrrrr}
+\toprule
+ & Value & bur14 & ber52 & kA100 & kA200 \\
+\midrule
+$p$ & 50 & 0.7 & 16.9 & 80.5 & 228.2 \\
+ & \textbf{100} & 0.6 & 9.8 & 46.6 & 155.2 \\
+ & 120 & 0.4 & 8.9 & 39.3 & 144.2 \\
+ & 150 & 0.3 & 9.0 & 32.2 & 126.5 \\
+\midrule
+$G$ & 100 & 0.4 & 38.8 & 175.6 & 431.0 \\
+ & 300 & 0.7 & 13.8 & 72.6 & 239.3 \\
+ & \textbf{500} & 0.6 & 11.3 & 44.7 & 154.8 \\
+ & 800 & 0.1 & 9.1 & 28.8 & 108.7 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\begin{tabular}{llrrrr}
+\toprule
+ & Value & bur14 & ber52 & kA100 & kA200 \\
+\midrule
+$m$ & 0.05 & 0.4 & 14.1 & 64.2 & 175.1 \\
+ & \textbf{0.1} & 0.5 & 10.0 & 44.3 & 159.1 \\
+ & 0.2 & 0.7 & 8.4 & 30.5 & 142.1 \\
+ & 0.4 & 0.0 & 9.0 & 24.4 & 151.1 \\
+\midrule
+$r$ & 0.3 & 1.0 & 11.9 & 57.7 & 202.8 \\
+ & 0.5 & 1.1 & 11.1 & 48.8 & 178.3 \\
+ & \textbf{0.7} & 0.7 & 9.9 & 45.8 & 164.6 \\
+ & 0.9 & 0.5 & 11.7 & 43.4 & 152.5 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{table}
+
+Table~\ref{tab:sweep} reports the parameter sweeps on the four instances of the
+main study. Only random initialisation is shown, since with NN + 2-opt or
+Combined seeding the mean gap on kroA200 stayed between 1.5\% and 2.3\% for
+every value tested. Each parameter was varied separately. The default
+configuration appears once in every block, each time with different seeds, and
+its results differ between blocks: 154.8--164.6\% on kroA200 and 9.8--11.3\% on
+berlin52. Results on kroA200 are based on 10 runs per setting, the others on 30.
+
+The number of generations and the population size had the clearest effect on
+the larger instances. Increasing $G$ from 100 to 800 reduced the mean gap on
+kroA100 from 175.6\% to 28.8\%, and on kroA200 from 431.0\% to 108.7\%.
+Increasing $p$ from 50 to 150 reduced it from 80.5\% to 32.2\% on kroA100 and
+from 228.2\% to 126.5\% on kroA200, while the running time grew roughly in
+proportion to $p$. Settings with a similar number of evaluations ($p \times G$)
+gave similar results on berlin52 and kroA100: 9.1\% and 28.8\% with $G=800$,
+$p=100$, against 9.0\% and 32.2\% with $p=150$, $G=500$. On kroA200 the gap was
+lower with more generations (108.7\% against 126.5\%). At $G=800$ the gap was
+still decreasing on the two larger instances.
+
+On the smaller instances these effects were weaker. On berlin52, populations
+larger than 100 gave gaps between 8.9\% and 9.8\%. On burma14 the gap stayed
+below 1.1\% in every configuration, with slightly lower values for larger
+populations (0.7\% at $p=50$, 0.3\% at $p=150$).
+
+A higher mutation rate gave shorter tours on the larger instances. On kroA100
+the gap fell from 64.2\% at $m=0.05$ to 24.4\% at $m=0.4$. On kroA200 it fell
+from 175.1\% to 142.1\% between $m=0.05$ and $m=0.2$, and was 151.1\% at
+$m=0.4$; this difference is smaller than the spread of the default
+configuration noted above. On berlin52 the rate had little effect above
+$m=0.1$. One possible explanation for the effect of mutation is that
+inversion reverses a segment of the tour, which is the same change as a 2-opt
+move, applied at random.
+
+A higher replacement rate, meaning a larger share of new offspring in each
+generation, gave shorter tours on kroA100 (57.7\% at $r=0.3$ against 43.4\% at
+$r=0.9$) and on kroA200 (202.8\% against 152.5\%). On berlin52 the results
+showed no consistent trend, with gaps between 9.9\% and 11.9\%.
+
+\subsection{Scaling with Problem Size}
+
+Table~\ref{tab:scaling} shows the results of the scaling experiment, in which
+the system was tested on all six instances with random initialisation and the
+default parameters. The mean gap grew much faster than the number of cities:
+from 0.5\% on burma14 to 46.6\% on kroA100 and 1086.3\% on pr1002. On pr1002
+the GA reduced the mean gap of the best initial tour from 2305\% to 1086\%, yet
+the final tours were still almost twelve times as long as the optimal tour. The
+standard deviation of the gap also rose, from 1.2 percentage points on burma14
+to 16.2 on pr1002. The mean running time, in contrast, grew roughly linearly
+from kroA100 upwards, from 3.8~s to 40.4~s, and stayed below one minute for all
+instances.
 
 % ===============================================================
 \section{Conclusions}
