@@ -258,6 +258,46 @@ encountered during the complete run is returned.
 \section{Experimental part}
 \label{sec:experimental}
 
+\subsection{Hardware and Software}
+All experiments were run on two MacBook Pro laptops with Apple Silicon
+(M-series) processors. The algorithm is implemented in Python~3.12 using only
+the standard library; \texttt{matplotlib} is used solely to produce the
+figures. Every trial runs as a single process, and all randomness is drawn
+from a seeded generator, so a fixed seed reproduces identical results on any
+machine.
+
+\subsection{Experimental Protocol}
+Every configuration is repeated in several independent runs seeded from a fixed
+master seed. The study proceeds in three stages. First, the random,
+nearest-neighbour/2-opt, geometric (angle-based) and combined initialisations
+are compared on burma14, berlin52, kroA100 and
+kroA200. The nearest-neighbour and combined ones already start at the optimum
+on burma14 and berlin52 (mean gap 0.00\%) and within about 2\% of it on
+kroA100 and kroA200, and the GA improves them by less than 0.3 percentage
+points, whereas the random and angle-based ones improve substantially.
+
+Second, each hyperparameter is swept on the same four instances, one at a
+time: population size $p \in \{50,100,120,150\}$, generations
+$G \in \{100,300,500,800\}$, mutation rate $m \in \{0.05,0.1,0.2,0.4\}$ and
+replacement rate $r \in \{0.3,0.5,0.7,0.9\}$; swap and inversion mutation are
+also compared on berlin52, and inversion is retained. Each sweep is repeated
+for all four initialisations and varies one parameter around the default
+configuration ($p=100$, $r=0.7$, $m=0.1$, $G=500$).
+
+Third, the problem-size
+scaling experiment repeats this configuration on the six instances, using the
+random initialisation.
+
+\subsection{Datasets}
+The evaluation uses six symmetric TSPLIB instances~\cite{reinelt1991} of
+increasing size: burma14 (14 cities), berlin52 (52), kroA100 (100), kroA200
+(200), pcb442 (442) and pr1002 (1002). They are committed to the repository
+and loaded with their original TSPLIB edge weights (GEO for burma14, EUC\_2D
+for the others). Performance is measured as the optimality gap
+$(C_{\mathrm{best}}-C_{\mathrm{opt}})/C_{\mathrm{opt}}\cdot 100$, using the
+published optima 3323, 7542, 21282, 29368, 50778 and 259045. The main study
+uses the four first datasets while the scaling experiment covers all six instances.
+
 % ===============================================================
 \section{Results and Analysis}
 
@@ -288,6 +328,11 @@ S.~Gani, ``Genetic algorithm for traveling salesman problem with modified cycle
 crossover operator,'' \emph{Computational Intelligence and Neuroscience},
 vol.~2017, Article ID 7430125, 7 pages, 2017.
 \url{https://doi.org/10.1155/2017/7430125}.
+
+\bibitem{reinelt1991}
+G.~Reinelt, ``TSPLIB---A Traveling Salesman Problem Library,'' \emph{ORSA
+Journal on Computing}, vol.~3, no.~4, pp.~376--384, 1991.
+\url{https://doi.org/10.1287/ijoc.3.4.376}.
 
 \bibitem{mitchell1997}
 T.~M. Mitchell, \emph{Machine Learning}. New York, NY, USA: McGraw-Hill, 1997,
