@@ -187,8 +187,9 @@ by swapping the parent roles.
 
 After crossover, mutation is applied to a fraction $m$ of the new population. 
 The individuals to be mutated are selected uniformly at random.
-Depending on the experiment, either swap mutation or inversion mutation is
-used. Swap mutation exchanges two randomly selected positions in a tour,
+The implementation supports swap and inversion mutation, 
+during the experiments inversion mutation is used. 
+Swap mutation exchanges two randomly selected positions in a tour,
 whereas inversion mutation reverses the order of the cities within a randomly
 selected segment. Both mutation operators preserve a valid permutation.
 
@@ -475,8 +476,65 @@ to 16.2 on pr1002. The mean running time, in contrast, grew roughly linearly
 from kroA100 upwards, from 3.8~s to 40.4~s, and stayed below one minute for all
 instances.
 
+First we wanted to compare the effect of the initial population so we tested four different
+initialization methods on the same four TSPLIB instances with the same parameter settings.
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Instance & Random & NN + 2-opt & Angle-based & Smart \\
+    \midrule
+    burma14  & $0.50 \pm 1.34$   & $0.00 \pm 0.00$ & $0.20 \pm 0.20$  & $0.00 \pm 0.00$ \\
+    berlin52 & $9.20 \pm 3.09$   & $0.00 \pm 0.00$ & $10.71 \pm 3.73$ & $0.00 \pm 0.00$ \\
+    kroA100  & $44.52 \pm 7.20$  & $1.55 \pm 0.50$ & $24.46 \pm 4.76$ & $1.88 \pm 0.14$ \\
+    kroA200  & $162.69 \pm 8.65$ & $2.08 \pm 0.28$ & $70.99 \pm 5.23$ & $1.96 \pm 0.34$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Mean final optimality gap (\%) $\pm$ sample standard deviation over 30 runs for each initialization method and instance. Lower gaps indicate better solutions.}
+  \label{tab:init-results}
+\end{table}
+
+The nearest-neighbour and smart methods already reached their known optimum in their initial populations on burma14 and berlin52.
+On kroA100 and kroA200, their mean initial gaps were about 1.91\% and 2.25\%, respectively, and the GA reduced
+these gaps by less than 0.4 percentage points. In comparison, the random and angle-based
+initializations began further from the optimum, but the GA reduced their gaps by a substantial amount during the search.
+This shows that initialization method had a strong effect on the final solution quality.
+
+In order to examine how the algorithm performs across different size datasets, we ran it on the six TSPLIB benchmarks
+using random initialization with the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap
+and its sample standard deviation, along with the number of runs that reached the known optimum.
+A lower gap indicates a tour closer to the optimum.
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Instance & Cities & Mean gap (\%) $\pm$ SD & Runs at optimum \\
+    \midrule
+    burma14  & 14   & $0.51 \pm 1.16$       & 18/30 \\
+    berlin52 & 52   & $11.25 \pm 3.27$      & 0/30  \\
+    kroA100  & 100  & $46.63 \pm 6.23$      & 0/30  \\
+    kroA200  & 200  & $160.85 \pm 12.38$    & 0/30  \\
+    pcb442   & 442  & $442.42 \pm 12.28$    & 0/30  \\
+    pr1002   & 1002 & $1086.32 \pm 16.16$   & 0/30  \\
+    \bottomrule
+  \end{tabular}
+  \caption{Optimality gap across 30 runs per TSPLIB instance using random initialization. SD is the sample standard deviation of the recorded gaps; lower gaps are better.}
+  \label{tab:scaling-results}
+\end{table}
+The mean gap increased across the instances, from 0.51\% to 1086.32\%. The algorithm reached the 
+known optimum in 18 of 30 burma14 runs, but failed to reach the optimum on all the other instances.
+This suggests that the GA struggled to find near-optimal tours on larger benchmarks.
+
+
 % ===============================================================
 \section{Conclusions}
+We implemented and evaluated a genetic algorithm for the Travelling Salesman problem on six TSPLIB instances.
+Our results showed that different initialization made a large difference, while the random-initialized algorithm
+struggled on the larger instances. In the future, we could try adding local search during the algorithm and test
+it on more instances.
 
 % ===============================================================
 \begin{thebibliography}{9}
