@@ -168,10 +168,10 @@ tour costs are used directly where possible, since minimizing $C(\pi)$ is
 equivalent to maximizing $F(\pi)$.
 
 In each generation, approximately a fraction $(1-r)$ of the population is
-selected deterministically by retaining the individuals with the lowest tour
-costs. These individuals are copied to the new population before mutation.
-The remaining fraction is filled with offspring generated from selected parent
-pairs.
+retained for the next generation: each survivor is chosen independently from
+the current population by tournament selection of size $k$, and is copied to
+the new population before mutation. The remaining fraction is filled with
+offspring generated from selected parent pairs.
 
 Parent selection for crossover is performed using tournament selection.
 For each parent, $k$ individuals are sampled randomly from the current
@@ -218,7 +218,10 @@ encountered during the complete run is returned.
     \State \textbf{Selection:}
     \State $q \gets \operatorname{round}(rp/2)$
     \State $s \gets p - 2q$
-    \State add the best $s$ individuals from $P$ to $P_s$
+    \For{$i = 1$ to $s$}
+        \State select an individual from $P$ using tournament selection of size $k$
+        \State add it to $P_s$
+    \EndFor
 
     \Statex
     \State \textbf{Crossover:}
