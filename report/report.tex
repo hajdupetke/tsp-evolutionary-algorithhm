@@ -265,31 +265,22 @@ encountered during the complete run is returned.
 All experiments were run on two MacBook Pro laptops with Apple Silicon
 (M-series) processors. The algorithm is implemented in Python~3.12 using only
 the standard library; \texttt{matplotlib} is used solely to produce the
-figures. Every trial runs as a single process, and all randomness is drawn
-from a seeded generator, so a fixed seed reproduces identical results on any
-machine.
+figures. Every trial runs as a single process. Random numbers are generated
+from explicitly assigned seeds, making the experiments reproducible with the
+same code and configuration.
 
 \subsection{Experimental Protocol}
-Every configuration is repeated in several independent runs seeded from a fixed
-master seed. The study proceeds in three stages. First, the random,
-nearest-neighbour/2-opt, geometric (angle-based) and combined initialisations
-are compared on burma14, berlin52, kroA100 and
-kroA200. The nearest-neighbour and combined ones already start at the optimum
-on burma14 and berlin52 (mean gap 0.00\%) and within about 2\% of it on
-kroA100 and kroA200, and the GA improves them by less than 0.3 percentage
-points, whereas the random and angle-based ones improve substantially.
-
-Second, each hyperparameter is swept on the same four instances, one at a
-time: population size $p \in \{50,100,120,150\}$, generations
-$G \in \{100,300,500,800\}$, mutation rate $m \in \{0.05,0.1,0.2,0.4\}$ and
-replacement rate $r \in \{0.3,0.5,0.7,0.9\}$; swap and inversion mutation are
-also compared on berlin52, and inversion is retained. Each sweep is repeated
-for all four initialisations and varies one parameter around the default
-configuration ($p=100$, $r=0.7$, $m=0.1$, $G=500$).
-
-Third, the problem-size
-scaling experiment repeats this configuration on the six instances, using the
-random initialisation.
+Each configuration is repeated for 30 runs. The study proceeds in three
+stages. First, random, nearest-neighbour tours improved by 2-opt, angle-based
+tours, and their combination are compared on burma14, berlin52, kroA100, and
+kroA200. Second, population size $p \in \{50,100,120,150\}$, number of
+generations $G \in \{100,300,500,800\}$, mutation rate
+$m \in \{0.05,0.1,0.2,0.4\}$, and replacement rate
+$r \in \{0.3,0.5,0.7,0.9\}$ are varied one at a time on the same four
+instances and for all four initialization methods. The remaining parameters
+are held at $p=100$, $G=500$, $m=0.1$, and $r=0.7$, and inversion mutation is
+used. Third, the problem-size experiment uses random initialization and these
+default parameter values on all six instances.
 
 \subsection{Datasets}
 The evaluation uses six symmetric TSPLIB instances~\cite{reinelt1991} of
