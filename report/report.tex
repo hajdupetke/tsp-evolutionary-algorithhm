@@ -186,8 +186,9 @@ by swapping the parent roles.
 
 After crossover, mutation is applied to a fraction $m$ of the new population. 
 The individuals to be mutated are selected uniformly at random.
-Depending on the experiment, either swap mutation or inversion mutation is
-used. Swap mutation exchanges two randomly selected positions in a tour,
+The implementation supports swap and inversion mutation, 
+during the experiments inversion mutation is used. 
+Swap mutation exchanges two randomly selected positions in a tour,
 whereas inversion mutation reverses the order of the cities within a randomly
 selected segment. Both mutation operators preserve a valid permutation.
 
@@ -322,7 +323,7 @@ initializations began further from the optimum, but the GA reduced their gaps by
 This shows that initialization method had a strong effect on the final solution quality.
 
 In order to examine how the algorithm performs across different size datasets, we ran it on the six TSPLIB benchmarks
-using random initialization and the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap
+using random initialization with the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap
 and its sample standard deviation, along with the number of runs that reached the known optimum.
 A lower gap indicates a tour closer to the optimum.
 \begin{table}[H]
