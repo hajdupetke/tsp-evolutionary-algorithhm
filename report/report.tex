@@ -142,7 +142,7 @@ representation of the TSP; its pseudo-code is given in
 Section~\ref{sec:algorithm}. Within this template, the design choices left open
 concern the initialisation of the population and the crossover operator, which
 we align with the literature reviewed in Section~\ref{sec:related}. We
-test four initializations: random, greedy nearest-neighbour tours refined by
+test four initialisations: random, greedy nearest-neighbour tours refined by
 2-opt~\cite{liu2014}, geometric non-crossing tours~\cite{liao2012}, and their
 combination. For recombination we adopt the order
 crossover (OX)~\cite{hussain2017}. The remaining operators are left
@@ -166,7 +166,7 @@ maximisation-based fitness function defined as
 Consequently, shorter tours receive higher fitness values and are favoured
 during selection. In the implementation,
 tour costs are used directly where possible, since minimising $C(\pi)$ is
-equivalent to maximizing $F(\pi)$.
+equivalent to maximising $F(\pi)$.
 
 In each generation, approximately a fraction $(1-r)$ of the population is
 retained for the next generation: each survivor is chosen independently from
@@ -272,8 +272,8 @@ from explicitly assigned seeds, making the experiments reproducible with the
 same code and configuration.
 
 \subsection{Experimental Protocol}
-Each configuration is repeated for 30 runs with the expection of kroA200 parameter, 
-which only runs 10 times. 
+Each configuration is repeated for 30 runs with the exception of kroA200 parameter sweeps, 
+which use 10 runs. 
 The study proceeds in three stages. 
 First, random, nearest-neighbour tours improved by 2-opt, angle-based
 tours, and their combination are compared on burma14, berlin52, kroA100, and
@@ -323,11 +323,11 @@ parameter settings.
   \label{tab:init-results}
 \end{table}
 
-The nearest-neighbour and smart methods already reached their known optimum in
+The nearest-neighbour and smart methods already reached the known optimum in
 their initial populations on burma14 and berlin52. On kroA100 and kroA200,
 their mean initial gaps were about 1.91\% and 2.25\%, respectively, and the GA
 reduced these gaps by less than 0.4 percentage points. In comparison, the
-random and angle-based initializations began further from the optimum, but the
+random and angle-based initialisations began further from the optimum, but the
 GA reduced their gaps by a substantial amount during the search.
 This shows that the initialisation method had a strong effect on the final
 solution quality.
