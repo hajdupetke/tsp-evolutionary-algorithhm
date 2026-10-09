@@ -80,6 +80,7 @@ Existing valid files are skipped unless `--force` is given.
 ```bash
 python main.py                          # sanity run on berlin52 + full experiment suite
 python main.py --quick                  # smoke test (G=20, runs=2)
+python main.py --init-only --runs 30    # initialization comparison only; outputs in results/init_comparison_only/
 python main.py --skip-experiments       # only the berlin52 sanity run
 python main.py --seed 123               # repeatable run with a different master seed
 ```
@@ -94,6 +95,7 @@ python main.py --seed 123               # repeatable run with a different master
 | `--init-method`      | random  | `random` \| `nn` \| `angle` \| `smart`   |
 | `--runs`             | 10      | Repetitions per experiment configuration |
 | `--skip-experiments` | off     | Skip the full suite                      |
+| `--init-only`        | off     | Run only initialization comparisons and save results/plots to a separate folder |
 | `--quick`            | off     | Shortcut for `G=20, runs=2`              |
 
 `main.py` loads berlin52, runs the GA, prints result vs. optimum, saves

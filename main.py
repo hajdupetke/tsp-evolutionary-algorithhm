@@ -10,6 +10,7 @@ from src.utils import load_cities, load_instance, calculate_cost
 from src.experiments import (
     run_single,
     run_all_experiments,
+    run_initialization_comparison,
     run_full_sweep,
     DEFAULT_PARAMS,
     KNOWN_OPTIMALS,
@@ -67,6 +68,9 @@ def parse_args():
     p.add_argument("--full-sweep", action="store_true",
                    help="Run full grid sweep: every dataset x (init/p/G/m/r), "
                         "plots to results/<dataset>/*.png with settings footer.")
+    p.add_argument("--init-only", action="store_true",
+                   help="Run only the initialization comparison on the four sweep datasets; "
+                        "save outputs under results/init_comparison_only/.")
     p.add_argument("--sweep-p", nargs="*", type=int, default=None,
                    help=f"Population sizes for sweep (default: {' '.join(map(str, SWEEP_P_VALUES))}).")
     p.add_argument("--sweep-g", nargs="*", type=int, default=None,
@@ -92,6 +96,20 @@ def main():
 
     print("=== TARI29 Group 9 — TSP Genetic Algorithm ===\n", flush=True)
     print(f"Master seed: {args.seed} (all trials derive their own seed from it)", flush=True)
+
+    if args.init_only:
+        params = dict(DEFAULT_PARAMS,
+                      p=args.population_size,
+                      G=args.generations,
+                      r=args.replacement_rate,
+                      m=args.mutation_rate)
+        out = run_initialization_comparison(
+            runs=args.runs,
+            base_seed=args.seed,
+            params=params,
+        )
+        print(f"Initialization-comparison results: {out['results_path']}", flush=True)
+        return
 
     # ---- Quick sanity run (dataset selectable via --dataset) ------------------
     print(f"Loading {args.dataset} ...", flush=True)
