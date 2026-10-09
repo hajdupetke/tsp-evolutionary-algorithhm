@@ -187,8 +187,8 @@ by swapping the parent roles.
 
 After crossover, mutation is applied to a fraction $m$ of the new population. 
 The individuals to be mutated are selected uniformly at random.
-The implementation supports swap and inversion mutation, 
-during the experiments inversion mutation is used. 
+The implementation supports swap and inversion mutation; inversion mutation
+is used in the experiments described here.
 Swap mutation exchanges two randomly selected positions in a tour,
 whereas inversion mutation reverses the order of the cities within a randomly
 selected segment. Both mutation operators preserve a valid permutation.
@@ -272,8 +272,10 @@ from explicitly assigned seeds, making the experiments reproducible with the
 same code and configuration.
 
 \subsection{Experimental Protocol}
-Each configuration is repeated for 30 runs. The study proceeds in three
-stages. First, random, nearest-neighbour tours improved by 2-opt, angle-based
+Each configuration is repeated for 30 runs with the expection of kroA200 parameter, 
+which only runs 10 times. 
+The study proceeds in three stages. 
+First, random, nearest-neighbour tours improved by 2-opt, angle-based
 tours, and their combination are compared on burma14, berlin52, kroA100, and
 kroA200. Second, population size $p \in \{50,100,120,150\}$, number of
 generations $G \in \{100,300,500,800\}$, mutation rate
@@ -292,7 +294,7 @@ and loaded with their original TSPLIB edge weights (GEO for burma14, EUC\_2D
 for the others). Performance is measured as the optimality gap
 $(C_{\mathrm{best}}-C_{\mathrm{opt}})/C_{\mathrm{opt}}\cdot 100$, using the
 published optima 3323, 7542, 21282, 29368, 50778 and 259045. The main study
-uses the four first datasets while the scaling experiment covers all six instances.
+uses the first four datasets, while the scaling experiment covers all six instances.
 
 % ===============================================================
 \section{Results and Analysis}
@@ -300,82 +302,36 @@ uses the four first datasets while the scaling experiment covers all six instanc
 
 \subsection{Effect of the Initialisation}
 
+First, we compared the effect of the initial population by testing four
+initialization methods on the same four TSPLIB instances with the same
+parameter settings.
+
 \begin{table}[H]
-\centering
-\caption{Mean gap (\%) $\pm$ standard deviation and mean running time per run
-for each initialisation, default parameters ($p=100$, $G=500$, $m=0.1$,
-$r=0.7$), 30 runs per cell. In parentheses: mean gap of the best initial tour.}
-\label{tab:init}
-\footnotesize
-\begin{tabular}{lcccc}
-\toprule
-Instance & Random & NN + 2-opt & Angle-based & Combined \\
-\midrule
-\multicolumn{5}{l}{\textit{Gap (\%)}} \\
-burma14 & 0.50 $\pm$ 1.34 (50) & 0.00 $\pm$ 0.00 (0) & 0.20 $\pm$ 0.20 (11) & 0.00 $\pm$ 0.00 (0) \\
-berlin52 & 9.20 $\pm$ 3.09 (240) & 0.00 $\pm$ 0.00 (0) & 10.71 $\pm$ 3.73 (92) & 0.00 $\pm$ 0.00 (0) \\
-kroA100 & 44.52 $\pm$ 7.20 (610) & 1.55 $\pm$ 0.50 (2) & 24.46 $\pm$ 4.76 (144) & 1.88 $\pm$ 0.14 (2) \\
-kroA200 & 162.69 $\pm$ 8.65 (960) & 2.08 $\pm$ 0.28 (2) & 70.99 $\pm$ 5.23 (203) & 1.96 $\pm$ 0.34 (2) \\
-\midrule
-\multicolumn{5}{l}{\textit{Time (s)}} \\
-burma14 & 0.75 & 0.78 & 0.76 & 0.78 \\
-berlin52 & 0.80 & 1.06 & 0.82 & 0.87 \\
-kroA100 & 1.44 & 3.00 & 1.49 & 1.93 \\
-kroA200 & 2.75 & 12.55 & 2.80 & 7.31 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \small
+  \begin{tabular}{lrrrr}
+    \toprule
+    Instance & Random & NN + 2-opt & Angle-based & Smart \\
+    \midrule
+    burma14  & $0.50 \pm 1.34$   & $0.00 \pm 0.00$ & $0.20 \pm 0.20$  & $0.00 \pm 0.00$ \\
+    berlin52 & $9.20 \pm 3.09$   & $0.00 \pm 0.00$ & $10.71 \pm 3.73$ & $0.00 \pm 0.00$ \\
+    kroA100  & $44.52 \pm 7.20$  & $1.55 \pm 0.50$ & $24.46 \pm 4.76$ & $1.88 \pm 0.14$ \\
+    kroA200  & $162.69 \pm 8.65$ & $2.08 \pm 0.28$ & $70.99 \pm 5.23$ & $1.96 \pm 0.34$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{Mean final optimality gap (\%) $\pm$ sample standard deviation over 30 runs for each initialization method and instance. Lower gaps indicate better solutions.}
+  \label{tab:init-results}
 \end{table}
 
-Of the algorithm settings we varied, the initialisation had the largest effect
-on solution quality (Table~\ref{tab:init}). With NN + 2-opt and Combined
-seeding, the best initial tour on burma14 and berlin52 was already optimal, so
-the GA could not improve it further. On kroA100 and kroA200 these initial tours
-were about 2\% above the optimum, and the GA reduced the gap by less than 0.4
-percentage points.
+The nearest-neighbour and smart methods already reached their known optimum in
+their initial populations on burma14 and berlin52. On kroA100 and kroA200,
+their mean initial gaps were about 1.91\% and 2.25\%, respectively, and the GA
+reduced these gaps by less than 0.4 percentage points. In comparison, the
+random and angle-based initializations began further from the optimum, but the
+GA reduced their gaps by a substantial amount during the search.
+This shows that the initialization method had a strong effect on the final
+solution quality.
 
-Random and angle-based seeding left considerably more to the GA. On kroA100 the
-gap fell from 610\% for the best random initial tour to 44.5\% after 500
-generations, and from 144\% to 24.5\% for the angle-based initialisation.
-Figure~\ref{fig:conv} shows the corresponding convergence curves. The
-angle-based initialisation also ended with a lower gap than random on burma14
-and kroA200. On berlin52, however, it ended higher (10.7\% against 9.2\%),
-although it started from a much shorter tour (92\% against 240\%).
-
-The nearest-neighbour seeding increased the running time, and the increase
-grew with instance size. On kroA200 a run took 12.6~s with NN + 2-opt and
-7.3~s with Combined seeding, against 2.8~s with random or angle-based
-initialisation. On burma14 all four methods took about 0.8~s.
-
-\begin{figure}[tb]
-\centering
-\begin{minipage}[c]{0.40\textwidth}
-\centering
-\includegraphics[width=\textwidth]{../results/init_comparison_only/kroA100/convergence_init.png}
-\caption{Mean best tour cost on kroA100 (30 runs). nn = NN + 2-opt,
-smart = Combined (curves overlap).}
-\label{fig:conv}
-\end{minipage}\hfill
-\begin{minipage}[c]{0.56\textwidth}
-\centering
-\captionof{table}{Scaling with random initialisation and default parameters,
-30 runs per instance.}
-\label{tab:scaling}
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrr}
-\toprule
-Instance & Gap (\%) & SD & Time (s) \\
-\midrule
-burma14 (14) & 0.5 & 1.2 & 2.0 \\
-berlin52 (52) & 11.2 & 3.3 & 2.2 \\
-kroA100 (100) & 46.6 & 6.2 & 3.8 \\
-kroA200 (200) & 160.8 & 12.4 & 7.4 \\
-pcb442 (442) & 442.4 & 12.3 & 17.3 \\
-pr1002 (1002) & 1086.3 & 16.2 & 40.4 \\
-\bottomrule
-\end{tabular}
-\end{minipage}
-\end{figure}
 
 \subsection{Parameter Sensitivity}
 
@@ -427,11 +383,12 @@ $r$ & 0.3 & 1.0 & 11.9 & 57.7 & 202.8 \\
 
 Table~\ref{tab:sweep} reports the parameter sweeps on the four instances of the
 main study. Only random initialisation is shown, since with NN + 2-opt or
-Combined seeding the mean gap on kroA200 stayed between 1.5\% and 2.3\% for
+smart seeding the mean gap on kroA200 stayed between 1.5\% and 2.3\% for
 every value tested. Each parameter was varied separately. The default
 configuration appears once in every block, each time with different seeds, and
 its results differ between blocks: 154.8--164.6\% on kroA200 and 9.8--11.3\% on
-berlin52. Results on kroA200 are based on 10 runs per setting, the others on 30.
+berlin52. Results on kroA200 are based on 10 runs per setting, whereas the
+others are based on 30.
 
 The number of generations and the population size had the clearest effect on
 the larger instances. Increasing $G$ from 100 to 800 reduced the mean gap on
@@ -465,44 +422,8 @@ showed no consistent trend, with gaps between 9.9\% and 11.9\%.
 
 \subsection{Scaling with Problem Size}
 
-Table~\ref{tab:scaling} shows the results of the scaling experiment, in which
-the system was tested on all six instances with random initialisation and the
-default parameters. The mean gap grew much faster than the number of cities:
-from 0.5\% on burma14 to 46.6\% on kroA100 and 1086.3\% on pr1002. On pr1002
-the GA reduced the mean gap of the best initial tour from 2305\% to 1086\%, yet
-the final tours were still almost twelve times as long as the optimal tour. The
-standard deviation of the gap also rose, from 1.2 percentage points on burma14
-to 16.2 on pr1002. The mean running time, in contrast, grew roughly linearly
-from kroA100 upwards, from 3.8~s to 40.4~s, and stayed below one minute for all
-instances.
-
-First we wanted to compare the effect of the initial population so we tested four different
-initialization methods on the same four TSPLIB instances with the same parameter settings.
-
-\begin{table}[H]
-  \centering
-  \small
-  \begin{tabular}{lrrrr}
-    \toprule
-    Instance & Random & NN + 2-opt & Angle-based & Smart \\
-    \midrule
-    burma14  & $0.50 \pm 1.34$   & $0.00 \pm 0.00$ & $0.20 \pm 0.20$  & $0.00 \pm 0.00$ \\
-    berlin52 & $9.20 \pm 3.09$   & $0.00 \pm 0.00$ & $10.71 \pm 3.73$ & $0.00 \pm 0.00$ \\
-    kroA100  & $44.52 \pm 7.20$  & $1.55 \pm 0.50$ & $24.46 \pm 4.76$ & $1.88 \pm 0.14$ \\
-    kroA200  & $162.69 \pm 8.65$ & $2.08 \pm 0.28$ & $70.99 \pm 5.23$ & $1.96 \pm 0.34$ \\
-    \bottomrule
-  \end{tabular}
-  \caption{Mean final optimality gap (\%) $\pm$ sample standard deviation over 30 runs for each initialization method and instance. Lower gaps indicate better solutions.}
-  \label{tab:init-results}
-\end{table}
-
-The nearest-neighbour and smart methods already reached their known optimum in their initial populations on burma14 and berlin52.
-On kroA100 and kroA200, their mean initial gaps were about 1.91\% and 2.25\%, respectively, and the GA reduced
-these gaps by less than 0.4 percentage points. In comparison, the random and angle-based
-initializations began further from the optimum, but the GA reduced their gaps by a substantial amount during the search.
-This shows that initialization method had a strong effect on the final solution quality.
-
-In order to examine how the algorithm performs across different size datasets, we ran it on the six TSPLIB benchmarks
+To examine how the algorithm performs on instances of different sizes, we ran
+it on the six TSPLIB benchmarks
 using random initialization with the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap
 and its sample standard deviation, along with the number of runs that reached the known optimum.
 A lower gap indicates a tour closer to the optimum.
@@ -524,16 +445,21 @@ A lower gap indicates a tour closer to the optimum.
   \caption{Optimality gap across 30 runs per TSPLIB instance using random initialization. SD is the sample standard deviation of the recorded gaps; lower gaps are better.}
   \label{tab:scaling-results}
 \end{table}
-The mean gap increased across the instances, from 0.51\% to 1086.32\%. The algorithm reached the 
-known optimum in 18 of 30 burma14 runs, but failed to reach the optimum on all the other instances.
+The mean gap increased across the instances, from 0.51\% to 1086.32\%. The
+algorithm reached the known optimum in 18 of 30 burma14 runs, but did not reach
+the optimum in any run on the other instances.
 This suggests that the GA struggled to find near-optimal tours on larger benchmarks.
 
 
 % ===============================================================
 \section{Conclusions}
-We implemented and evaluated a genetic algorithm for the Travelling Salesman problem on six TSPLIB instances.
-Our results showed that different initialization made a large difference, while the random-initialized algorithm
-struggled on the larger instances. In the future, we could try adding local search during the algorithm and test
+We implemented and evaluated a genetic algorithm for the Travelling Salesman
+Problem on six TSPLIB instances. Our results showed that the initialization
+method made a large difference, while the algorithm with random initialization
+struggled on the larger instances. The parameter sweeps also suggested that using more generations
+and a larger population generally helped on the larger instances, while the
+effects of mutation and replacement rates were less consistent.
+In the future, we could try adding local search during the algorithm and test
 it on more instances.
 
 % ===============================================================
