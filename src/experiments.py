@@ -381,6 +381,54 @@ def _section(title, rows, cols):
     return title, ",".join(cols), lines
 
 
+def run_initialization_comparison(datasets=None, runs=30, base_seed=42,
+                                  params=None, results_dir=None):
+    """Run only the initialization comparison and save its rows and plots."""
+    from src.plot import plot_convergence_comparison
+
+    datasets = list(datasets) if datasets is not None else list(SWEEP_DATASETS)
+    unknown = [name for name in datasets if name not in DATASETS]
+    if unknown:
+        raise ValueError(f"Unknown datasets={unknown!r}, expected subset of {sorted(DATASETS)}")
+    if not datasets:
+        raise ValueError("datasets must not be empty")
+
+    params = dict(DEFAULT_PARAMS if params is None else params)
+    output_dir = Path(results_dir) if results_dir else RESULTS_DIR / "init_comparison_only"
+    tail = ["run", "seed", "best_cost", "init_best", "gap_percent", "time_seconds"]
+    sections = []
+    output = {}
+
+    for dataset_index, name in enumerate(datasets):
+        cities, weight_type = load_instance(str(DATA_DIR / DATASETS[name]))
+        seed = base_seed + dataset_index * 100000
+        _log(f"[init-only] dataset={name} runs={runs} G={params['G']} p={params['p']} ...")
+        rows, histories = experiment_init_comparison(
+            cities, dataset_name=name, params=params, runs=runs,
+            base_seed=seed, weight_type=weight_type)
+
+        dataset_dir = output_dir / name
+        plot_convergence_comparison(
+            histories,
+            title=f"{name}: initialization comparison (mean over {runs} runs)",
+            save_path=str(dataset_dir / "convergence_init.png"),
+            settings_text=(
+                f"dataset={name} seed={seed} runs={runs} "
+                f"p={params['p']} G={params['G']} r={params['r']} "
+                f"m={params['m']} k={params['k']}"
+            ),
+        )
+        sections.append(_section(
+            f"EXPERIMENT 1: Initialization Comparison ({name})",
+            rows, ["dataset", "init_method"] + tail))
+        output[name] = {"rows": rows, "histories": histories}
+
+    results_path = output_dir / "results.txt"
+    _write_results(results_path, sections)
+    _log(f"[init-only] results and plots saved under {output_dir}")
+    return {"datasets": output, "results_path": str(results_path)}
+
+
 def run_all_experiments(base_seed=42, runs=10, generations=500,
                         population_size=100, results_path=None,
                         dataset="berlin52", scaling_datasets=None,
