@@ -424,31 +424,34 @@ showed no consistent trend, with gaps between 9.9\% and 11.9\%.
 
 To examine how the algorithm performs on instances of different sizes, we ran
 it on the six TSPLIB benchmarks
-using random initialisation with the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap
-and its sample standard deviation, along with the number of runs that reached the known optimum.
+using random initialisation with the same parameter settings. Table~\ref{tab:scaling-results} reports the mean optimality gap,
+its sample standard deviation, the mean execution time, and the number of runs that reached the known optimum.
 A lower gap indicates a tour closer to the optimum.
 \begin{table}[H]
   \centering
   \small
-  \begin{tabular}{lrrr}
+  \begin{tabular}{lrrrc}
     \toprule
-    Instance & Cities & Mean gap (\%) $\pm$ SD & Runs at optimum \\
+    Instance & Cities & Mean gap (\%) $\pm$ SD & Mean time (s) & Runs at optimum \\
     \midrule
-    burma14  & 14   & $0.51 \pm 1.16$       & 18/30 \\
-    berlin52 & 52   & $11.25 \pm 3.27$      & 0/30  \\
-    kroA100  & 100  & $46.63 \pm 6.23$      & 0/30  \\
-    kroA200  & 200  & $160.85 \pm 12.38$    & 0/30  \\
-    pcb442   & 442  & $442.42 \pm 12.28$    & 0/30  \\
-    pr1002   & 1002 & $1086.32 \pm 16.16$   & 0/30  \\
+    burma14  & 14   & $0.51 \pm 1.16$       & 0.75 & 18/30 \\
+    berlin52 & 52   & $11.25 \pm 3.27$      & 0.81 & 0/30  \\
+    kroA100  & 100  & $46.63 \pm 6.23$      & 1.48 & 0/30  \\
+    kroA200  & 200  & $160.85 \pm 12.38$    & 2.69 & 0/30  \\
+    pcb442   & 442  & $442.42 \pm 12.28$    & 6.29 & 0/30  \\
+    pr1002   & 1002 & $1086.32 \pm 16.16$   & 14.72 & 0/30  \\
     \bottomrule
   \end{tabular}
-  \caption{Optimality gap across 30 runs per TSPLIB instance using random initialisation. SD is the sample standard deviation of the recorded gaps; lower gaps are better.}
+  \caption{Optimality gap across 30 runs per TSPLIB instance using random initialisation. SD is the sample standard deviation of the recorded gaps and the mean time is measured in seconds; lower gaps are better.}
   \label{tab:scaling-results}
 \end{table}
 The mean gap increased across the instances, from 0.51\% to 1086.32\%. The
-algorithm reached the known optimum in 18 of 30 burma14 runs, but did not reach
-the optimum in any run on the other instances.
-This suggests that the GA struggled to find near-optimal tours on larger benchmarks.
+mean runtime also rose sharply with problem size, from 0.75s on burma14 to
+14.72s on pr1002, showing that the search cost grows substantially as the
+number of cities increases. The algorithm reached the known optimum in 18 of 30
+burma14 runs, but did not reach the optimum in any run on the other
+instances. This suggests that the GA struggled to find near-optimal tours on
+larger benchmarks.
 
 
 % ===============================================================
